@@ -33,4 +33,12 @@ export function parsePublicEnv(source: Record<string, string | undefined>) {
   return parsed.data;
 }
 
-export const env = parsePublicEnv(process.env);
+// NEXT_PUBLIC_* vars must be referenced as literal `process.env.NEXT_PUBLIC_X`
+// expressions for Next.js's bundler to statically inline them into the
+// client bundle — passing the whole `process.env` object through (as this
+// used to do) works server-side but silently becomes `undefined` in the
+// browser, since `process.env` itself is not preserved client-side.
+export const env = parsePublicEnv({
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+});

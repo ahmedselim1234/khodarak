@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { addressesApi } from "./addressesApi";
 
-// Scaffold only — no slices with real business logic yet. Later phases add
-// slices here (e.g. cart state in Phase 2) rather than inventing a second
-// store location.
 export const store = configureStore({
-  reducer: {},
+  reducer: {
+    [addressesApi.reducerPath]: addressesApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(addressesApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

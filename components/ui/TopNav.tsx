@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Container } from "./Container";
+import { createClient } from "@/lib/supabase/server";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 
 const links = [
   { href: "/", label: "الرئيسية" },
@@ -7,7 +9,12 @@ const links = [
   { href: "/subscription", label: "الاشتراكات" },
 ];
 
-export function TopNav() {
+export async function TopNav() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <header className="sticky top-0 w-full bg-surface/95 backdrop-blur-md shadow-sm z-50">
       <Container>
@@ -27,20 +34,26 @@ export function TopNav() {
             ))}
           </div>
           <div className="flex flex-row-reverse items-center gap-stack-md">
-            <Link
-              href="/login"
-              className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
-              aria-label="تسجيل الدخول"
-            >
-              account_circle
-            </Link>
-            <Link
-              href="/dashboard"
-              className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
-              aria-label="لوحة التحكم"
-            >
-              space_dashboard
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
+                  aria-label="لوحة التحكم"
+                >
+                  space_dashboard
+                </Link>
+                <SignOutButton />
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
+                aria-label="تسجيل الدخول"
+              >
+                account_circle
+              </Link>
+            )}
           </div>
         </nav>
       </Container>

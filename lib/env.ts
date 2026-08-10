@@ -13,12 +13,16 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
+  NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: z
+    .string()
+    .min(1, "NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY is required"),
 });
 
 export function parsePublicEnv(source: Record<string, string | undefined>) {
   const parsed = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: source.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY,
   });
 
   if (!parsed.success) {
@@ -41,4 +45,5 @@ export function parsePublicEnv(source: Record<string, string | undefined>) {
 export const env = parsePublicEnv({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY,
 });

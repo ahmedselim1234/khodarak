@@ -2,6 +2,8 @@ import { configureStore } from "@reduxjs/toolkit";
 import { addressesApi } from "./addressesApi";
 import { productsAdminApi } from "./productsAdminApi";
 import { cartApi } from "./cartApi";
+import { settingsAdminApi } from "./settingsAdminApi";
+import { pricingApi } from "./pricingApi";
 import { cartReducer } from "@/lib/cart/cartSlice";
 
 export const store = configureStore({
@@ -9,13 +11,17 @@ export const store = configureStore({
     [addressesApi.reducerPath]: addressesApi.reducer,
     [productsAdminApi.reducerPath]: productsAdminApi.reducer,
     [cartApi.reducerPath]: cartApi.reducer,
+    [settingsAdminApi.reducerPath]: settingsAdminApi.reducer,
+    [pricingApi.reducerPath]: pricingApi.reducer,
     cart: cartReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       addressesApi.middleware,
       productsAdminApi.middleware,
-      cartApi.middleware
+      cartApi.middleware,
+      settingsAdminApi.middleware,
+      pricingApi.middleware
     ),
 });
 

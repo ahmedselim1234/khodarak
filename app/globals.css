@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Signature effects ported verbatim from design/home.html (inline <style>, lines 12-33).
+ * See specs/001-phase-0-foundation/research.md — do not re-derive.
+ */
+body {
+  font-family: "plusJakartaSans", var(--font-plus-jakarta-sans), sans-serif;
+  scroll-behavior: smooth;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+}
+
+.organic-shadow {
+  box-shadow: 0px 4px 20px rgba(27, 94, 32, 0.05);
+}
+
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

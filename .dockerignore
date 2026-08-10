@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.claude
+.specify
+design
+specs
+plan.md
+*.log
+.env*
+!.env.example
+coverage
+test-results
+playwright-report

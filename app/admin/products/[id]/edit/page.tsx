@@ -1,17 +1,15 @@
 import { notFound } from "next/navigation";
 import { TopNav } from "@/components/ui/TopNav";
 import { Container } from "@/components/ui/Container";
+import { Card } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { mapProductRow } from "@/lib/products/mapProductRow";
-import { ProductGallery } from "@/components/product/ProductGallery";
-import { ProductInfo } from "@/components/product/ProductInfo";
+import { ProductForm } from "@/components/admin/products/ProductForm";
 
 const PRODUCT_SELECT =
   "id, name_ar, category, price, unit, image_url, is_available, min_qty, max_qty, sort_order, created_at";
 
-// /browse/[id] — Server Component product detail (contracts/catalog-browse.md).
-// FR-017: a missing/deleted product renders notFound(), not a broken page.
-export default async function ProductDetailsPage({
+export default async function EditAdminProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -31,11 +29,13 @@ export default async function ProductDetailsPage({
       <TopNav />
       <main>
         <Container>
-          <div className="py-stack-lg">
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              <ProductGallery imageUrl={product.imageUrl} nameAr={product.nameAr} />
-              <ProductInfo product={product} />
-            </section>
+          <div className="py-stack-lg max-w-xl mx-auto flex flex-col gap-stack-md">
+            <h1 className="font-headline-md text-headline-md text-on-background font-bold text-right">
+              تعديل {product.nameAr}
+            </h1>
+            <Card>
+              <ProductForm product={product} />
+            </Card>
           </div>
         </Container>
       </main>

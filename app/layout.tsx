@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { StoreProvider } from "@/components/providers/StoreProvider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -30,7 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-background text-on-background font-body-md text-body-md antialiased">
-        {children}
+        <StoreProvider>{children}</StoreProvider>
       </body>
     </html>
   );

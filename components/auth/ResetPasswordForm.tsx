@@ -71,7 +71,11 @@ export function ResetPasswordForm() {
   }
 
   if (linkStatus === "checking") {
-    return null;
+    return (
+      <p className="font-body-md text-body-md text-on-surface-variant text-center py-stack-lg">
+        جارٍ التحقق من الرابط...
+      </p>
+    );
   }
 
   if (linkStatus === "invalid") {

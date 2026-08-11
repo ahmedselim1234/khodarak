@@ -28,7 +28,11 @@ export function SubscriptionDashboard({
   frequencies: Frequencies;
 }) {
   const [dialog, setDialog] = useState<DialogState>("closed");
-  const { data: subscription, isLoading } = useGetSubscriptionQuery(subscriptionId ?? "", {
+  const {
+    data: subscription,
+    isLoading,
+    isError,
+  } = useGetSubscriptionQuery(subscriptionId ?? "", {
     skip: !subscriptionId,
   });
   const [resumeSubscription, { isLoading: resuming }] = useResumeSubscriptionMutation();
@@ -50,6 +54,14 @@ export function SubscriptionDashboard({
           ابدأ الاشتراك
         </Link>
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="font-body-md text-body-md text-error text-center py-stack-lg">
+        تعذر تحميل بيانات الاشتراك. حاول تحديث الصفحة.
+      </p>
     );
   }
 

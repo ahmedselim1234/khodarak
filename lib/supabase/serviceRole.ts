@@ -5,25 +5,33 @@ import { serverEnv } from "@/lib/env.server";
 /**
  * Service-role Supabase client — bypasses Row Level Security entirely.
  *
- * Import this ONLY from lib/payments/processPaymentOutcome.ts and
- * lib/subscription/mutateSubscription.ts (Phase 6 — subscription
- * edit/pause/resume/cancel and payment-method replacement, per
- * specs/007-phase-6-customer-dashboard/research.md §3/§5, extending the
- * same rule to a second table pair). Every other server-side read/write in
- * this codebase MUST continue using lib/supabase/server.ts's RLS-scoped,
- * cookie-authenticated client.
+ * Import this ONLY to write subscriptions/subscription_items/payments/
+ * payment_methods/orders/order_items/subscription_pauses — the tables
+ * where a customer's own RLS-scoped session must never have a write path,
+ * no matter how narrowly an owner-scoped policy might otherwise be
+ * written. Every other server-side read/write in this codebase MUST
+ * continue using lib/supabase/server.ts's RLS-scoped, cookie-authenticated
+ * client. As of Phase 9, actual importers are: lib/payments/
+ * processPaymentOutcome.ts, lib/payments/processRenewalOutcome.ts,
+ * lib/subscription/mutateSubscription.ts, lib/subscription/reprice.ts, and
+ * the Route Handlers that call straight into a service-role write for
+ * their own table (app/api/subscriptions/route.ts,
+ * app/api/cron/renewals/route.ts, app/api/payments/callback/route.ts,
+ * app/api/webhooks/moyasar/route.ts) — check for new importers with
+ * `grep -rl createServiceRoleClient app lib` rather than trusting this
+ * list to stay exhaustive on its own.
  *
- * Why this exists: subscription activation, saved payment methods, payment
- * records, and generated orders must never be writable through a customer's
- * own session — an owner-scoped RLS UPDATE policy restricts rows, not
- * columns, and Phase 1 already hit exactly this shape of bug once
+ * Why this exists: an owner-scoped RLS UPDATE/INSERT policy restricts
+ * rows, not columns or values — Phase 1 hit this once directly
  * (20260810120300_profiles_role_immutable.sql, where "you can update your
- * own profile" quietly also meant "you can update your own role"). The
- * webhook entry point has no user session at all, so an RLS-scoped client
- * isn't even available there — the service-role client is what makes
- * lib/payments/processPaymentOutcome.ts's activation logic identical
- * regardless of whether the callback or the webhook calls it
- * (specs/006-phase-5-moyasar-payment/research.md §1).
+ * own profile" quietly also meant "you can update your own role"), and
+ * Phase 9's own audit found it again in `subscriptions`/
+ * `subscription_items`'s original Phase 4 INSERT policies
+ * (specs/010-phase-9-hardening-launch/AUDIT_FINDINGS.md F-002 — a
+ * customer could insert a subscription with a self-chosen price and pay
+ * that forged amount for real items). The webhook entry point additionally
+ * has no user session at all, so an RLS-scoped client isn't even available
+ * there.
  */
 export function createServiceRoleClient() {
   return createSupabaseClient(serverEnv.NEXT_PUBLIC_SUPABASE_URL, serverEnv.SUPABASE_SERVICE_ROLE_KEY, {

@@ -24,7 +24,7 @@ export function ProductInfo({ product }: { product: MappedProduct }) {
           {product.price.toFixed(2)}
         </span>
         <span className="text-on-surface-variant font-body-md text-body-md mb-2">
-          ريال / {UNIT_LABEL[product.unit]}
+          ر.س / {UNIT_LABEL[product.unit]}
         </span>
       </div>
       <div className="flex flex-col gap-4">

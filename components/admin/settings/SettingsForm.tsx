@@ -128,7 +128,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             </div>
             <div className="flex gap-stack-md">
               <FormField
-                label="نسبة الخصم (%)"
+                label="نسبة الخصم (٪)"
                 type="number"
                 value={frequencies[key].discountPercent}
                 onChange={(e) =>
@@ -269,7 +269,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           الضريبة والتقريب
         </h2>
         <FormField
-          label="نسبة ضريبة القيمة المضافة (%)"
+          label="نسبة ضريبة القيمة المضافة (٪)"
           type="number"
           value={vatPercent}
           onChange={(e) => setVatPercent(e.target.value)}

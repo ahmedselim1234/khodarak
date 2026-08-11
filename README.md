@@ -1,22 +1,84 @@
 # خضارك (Khodarak)
 
-Fresh produce subscription — Next.js App Router + TypeScript + Supabase, RTL-first.
+Fresh produce subscription — Next.js App Router + TypeScript + Supabase + Moyasar, RTL-first.
 
-This is Phase 0 (Foundation): a styled, reachable shell for every committed route, with no
-business logic yet. See [plan.md](./plan.md) and
-[specs/001-phase-0-foundation](./specs/001-phase-0-foundation) for the full spec, plan, and task
-breakdown.
+A complete customer-facing app (browse, subscribe, pay, manage a subscription), a full
+payment/renewal/dunning engine, and an admin panel, built across 9 phases per [plan.md](./plan.md)
+— see `specs/001-phase-0-foundation` through `specs/010-phase-9-hardening-launch` for the full
+spec/plan/task history of every phase.
 
-## Getting started
+## Getting started (local development)
 
 ```bash
-cp .env.example .env.local   # fill in your Supabase project's URL + keys
+cp .env.example .env.local   # fill in your Supabase project's URL + keys, and TEST-mode Moyasar keys
 npm install
 npm run dev
 ```
 
 Visit `http://localhost:3000`. Check `http://localhost:3000/api/health` to confirm the app can
-reach your configured Supabase project.
+reach your configured Supabase project. Local development never runs against Docker or live
+Moyasar credentials — see below for both.
+
+## Verifying before you push
+
+```bash
+npm run lint
+npm run typecheck
+npm run test:unit
+npm run build
+```
+
+This is the exact sequence `.github/workflows/ci.yml`'s `verify` job runs on every push/PR; a
+failing step here will fail CI and block deployment (see below).
+
+## Docker
+
+The `Dockerfile` is a multi-stage build producing a Next.js `standalone` image; `docker-compose.yml`
+runs it locally against the same env vars as `npm run dev`.
+
+```bash
+docker compose build
+docker compose up
+```
+
+The container exposes `GET /api/health` as its `HEALTHCHECK` target. Build-time-only env vars
+(everything under `NEXT_PUBLIC_*` plus the server secrets `lib/env.server.ts` validates) have
+placeholder values baked into the `Dockerfile`'s builder stage so the image can build in CI without
+real secrets; the real values are supplied at container **runtime** via `.env.production` (see
+`.env.production.example`), never baked into the image.
+
+## CI / Deploy / Rollback
+
+`.github/workflows/ci.yml` has two jobs:
+
+- **`verify`** (every push/PR): `npm ci` → lint → typecheck → `test:unit` → `build`. A failing step
+  blocks everything downstream.
+- **`deploy`** (`main` only, `needs: verify`): builds and pushes an image tagged with the commit SHA
+  to `ghcr.io/<org>/khodarak:<sha>`, then SSHes into the production host and runs
+  `scripts/deploy.sh <sha>`.
+
+`scripts/deploy.sh <image-tag>` pulls that tag via `docker-compose.prod.yml`, restarts the `web`
+service, and polls `/api/health` until it's healthy (or times out). `scripts/rollback.sh
+<previous-image-tag>` is the same mechanism run against a known-good previous tag — no rebuild
+needed, since the image is already in the registry. Required host secrets:
+`PRODUCTION_HOST` / `PRODUCTION_SSH_USER` / `PRODUCTION_SSH_KEY` / `PRODUCTION_APP_DIR`.
+
+Rollback must be exercised at least once against a real deployment before it's trusted — see
+`specs/010-phase-9-hardening-launch/LAUNCH_CHECKLIST.md` (FR-009) for whether that has happened yet.
+
+## Monitoring & going live
+
+`GET /api/health` is also the target for an external uptime checker (poll every 1–5 minutes, alert
+on failure — see `specs/010-phase-9-hardening-launch/contracts/monitoring.md`). The admin
+dashboard's counters (`components/admin/counters/CountersOverview.tsx`) surface active
+subscriptions, today's orders, this month's revenue, and auto-suspensions in the last 7 days as an
+at-a-glance operational signal.
+
+Cutting over from `pk_test_`/`sk_test_` Moyasar credentials to live ones, and the full go/no-go
+launch checklist, are documented in `specs/010-phase-9-hardening-launch/` (`.env.production.example`,
+`AUDIT_FINDINGS.md`, `LAUNCH_CHECKLIST.md`) — read `LAUNCH_CHECKLIST.md` before declaring the
+product launched; several of its rows require a real production host and real credentials an agent
+cannot provide, and are intentionally left for the team to close out.
 
 ## Project structure
 

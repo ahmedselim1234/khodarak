@@ -37,7 +37,7 @@ export function PaymentHistoryList({ payments }: { payments: PaymentHistoryRow[]
               <p className="font-label-sm text-label-sm text-error">{payment.failureReason}</p>
             )}
           </div>
-          <div className="text-left">
+          <div>
             <p className="font-bold">{(payment.amountHalalas / 100).toFixed(2)} ر.س</p>
             <p className="font-label-sm text-label-sm text-on-surface-variant">
               {STATUS_LABELS[payment.status] ?? payment.status}

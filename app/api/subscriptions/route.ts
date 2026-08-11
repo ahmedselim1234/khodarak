@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { subscriptionCreateSchema } from "@/lib/validation/subscription";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate } from "@/lib/pricing/calculate";
@@ -129,7 +130,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "rule_violation", breakdown }, { status: 422 });
   }
 
-  const { data: subscription, error: subscriptionError } = await supabase
+  // Phase 9 audit fix (AUDIT_FINDINGS.md F-002): creation writes go through
+  // the service-role client, not the caller's own RLS-scoped session —
+  // subscriptions/subscription_items have no authenticated-role INSERT
+  // policy at all (20260811150000_close_subscription_insert_gap.sql),
+  // mirroring the exact pattern Phase 5/6/7 already established for every
+  // other financial write. The price/items above are still fully
+  // server-computed moments earlier using the caller's own RLS-scoped
+  // reads (settings/address/city/cart) — this only changes which client
+  // performs the resulting write.
+  const serviceRoleSupabase = createServiceRoleClient();
+
+  const { data: subscription, error: subscriptionError } = await serviceRoleSupabase
     .from("subscriptions")
     .insert({
       user_id: user.id,
@@ -146,7 +158,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 
-  const { error: itemsError } = await supabase.from("subscription_items").insert(
+  const { error: itemsError } = await serviceRoleSupabase.from("subscription_items").insert(
     resolvedItems.map((item) => ({
       subscription_id: subscription.id,
       product_id: item.productId,
@@ -157,7 +169,7 @@ export async function POST(request: Request) {
   if (itemsError) {
     // Compensating action (research.md §3) — never leave a subscription with
     // no items reachable.
-    await supabase.from("subscriptions").delete().eq("id", subscription.id);
+    await serviceRoleSupabase.from("subscriptions").delete().eq("id", subscription.id);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 

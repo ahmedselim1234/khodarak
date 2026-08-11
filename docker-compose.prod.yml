@@ -1,0 +1,17 @@
+# Production overlay — research.md §3. Unlike docker-compose.yml (which
+# still builds locally, `build: .`, for User Story 2's own dev-parity
+# scenario), this file references a versioned, already-built image from
+# the registry. A deploy is "pull this tag"; a rollback (FR-009) is "point
+# back at the previous tag and redeploy" — neither requires a rebuild.
+#
+# Usage on the production host: IMAGE_TAG=<sha> docker compose
+#   -f docker-compose.prod.yml up -d
+# (scripts/deploy.sh and scripts/rollback.sh wrap this exact invocation.)
+services:
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY:-org/khodarak}:${IMAGE_TAG:?IMAGE_TAG is required}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    restart: unless-stopped

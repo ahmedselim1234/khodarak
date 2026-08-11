@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies (lockfile-exact)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build
+        # Same build-time NEXT_PUBLIC_*/server placeholders the Dockerfile
+        # itself uses (research.md §5) — CI's own build step is what would
+        # have caught the missing NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY
+        # placeholder had it existed before this phase (AUDIT_FINDINGS.md
+        # F-001).
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: "pk_test_placeholder"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-role-key"
+          MOYASAR_SECRET_KEY: "sk_test_placeholder"
+          MOYASAR_WEBHOOK_SECRET: "placeholder-webhook-secret"
+          CRON_SECRET: "placeholder-cron-secret"
+
+  deploy:
+    name: Deploy
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Deploy to production host
+        # research.md §3 / contracts/deploy-and-rollback.md — SSH in and
+        # run scripts/deploy.sh with the freshly-pushed tag. Host address,
+        # SSH key, and any other secrets live in this repo's own GitHub
+        # Actions secrets — never in this file.
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            cd ${{ secrets.PRODUCTION_APP_DIR }}
+            ./scripts/deploy.sh ${{ github.sha }}

@@ -104,9 +104,18 @@ export async function POST(request: Request) {
           moyasarPaymentId = response.id;
           verifiedStatus = response.status === "paid" ? "paid" : "failed";
           failureReason = verifiedStatus === "failed" ? "declined" : undefined;
-        } catch {
+        } catch (err) {
           // Request-level failure (network/timeout/non-2xx) — spec.md
-          // Clarification 4: treated exactly like a decline.
+          // Clarification 4: treated exactly like a decline. Logged
+          // explicitly (Phase 9 audit, FR-010) — this catch deliberately
+          // turns the failure into a business outcome (a recorded, retried
+          // payment attempt) rather than letting it propagate, which means
+          // it would otherwise never reach any framework-level error
+          // reporting the way an unhandled throw would.
+          console.error(
+            `[cron/renewals] Moyasar provider error for subscription ${subscriptionId}, cycle ${cycleNumber}:`,
+            err
+          );
           verifiedStatus = "failed";
           failureReason = "provider_error";
         }

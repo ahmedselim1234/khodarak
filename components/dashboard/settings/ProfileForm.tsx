@@ -20,12 +20,14 @@ export function ProfileForm({
   const [fullName, setFullName] = useState(initialFullName);
   const [phone, setPhone] = useState(initialPhone);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setFieldErrors({});
+    setFormError(null);
     setSuccess(false);
     try {
       await updateProfile({ fullName, phone }).unwrap();
@@ -33,7 +35,11 @@ export function ProfileForm({
       router.refresh();
     } catch (err) {
       const data = (err as { data?: { fields?: Record<string, string> } })?.data;
-      setFieldErrors(data?.fields ?? {});
+      if (data?.fields) {
+        setFieldErrors(data.fields);
+      } else {
+        setFormError("تعذر حفظ التغييرات. حاول مرة أخرى.");
+      }
     }
   }
 
@@ -53,6 +59,9 @@ export function ProfileForm({
       />
       {success && (
         <p className="font-label-sm text-label-sm text-primary">تم حفظ التغييرات بنجاح</p>
+      )}
+      {formError && (
+        <p className="font-label-sm text-label-sm text-error">{formError}</p>
       )}
       <Button type="submit" disabled={isLoading} className="self-start">
         {isLoading ? "جارٍ الحفظ..." : "حفظ التغييرات"}

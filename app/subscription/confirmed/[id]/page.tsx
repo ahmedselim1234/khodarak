@@ -15,6 +15,11 @@ const FREQUENCY_LABELS: Record<string, string> = {
   monthly: "شهري",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  paused: "موقوف مؤقتاً",
+  cancelled: "ملغى",
+};
+
 const THROTTLE_OPTIONS = { maxAttempts: 5, windowMinutes: 15 };
 
 // /subscription/confirmed/[id] — status-aware (Phase 5). `pending_payment`
@@ -174,17 +179,20 @@ export default async function SubscriptionConfirmedPage({
     );
   }
 
-  // paused/cancelled aren't reachable yet (Phase 6) — fall back to a
-  // generic status display rather than a broken page.
+  // paused/cancelled: fall back to a translated status display rather than
+  // a broken page or a raw English enum value.
   return (
     <>
       <TopNav />
       <main>
         <Container>
-          <div className="py-stack-lg max-w-xl mx-auto text-center">
+          <div className="py-stack-lg max-w-xl mx-auto text-center flex flex-col gap-stack-sm">
             <p className="font-body-md text-body-md text-on-surface-variant">
-              حالة الاشتراك: {subscription.status}
+              حالة الاشتراك: {STATUS_LABELS[subscription.status] ?? subscription.status}
             </p>
+            <Link href="/dashboard" className="text-primary font-bold hover:underline">
+              الذهاب إلى لوحة التحكم
+            </Link>
           </div>
         </Container>
       </main>

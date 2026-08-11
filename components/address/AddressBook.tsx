@@ -13,7 +13,7 @@ import { AddressForm } from "@/components/address/AddressForm";
 type FormState = { mode: "closed" } | { mode: "create" } | { mode: "edit"; address: Address };
 
 export function AddressBook({ cities }: { cities: { id: string; nameAr: string }[] }) {
-  const { data: addresses, isLoading } = useListAddressesQuery();
+  const { data: addresses, isLoading, isError } = useListAddressesQuery();
   const [deleteAddress, { isLoading: deleting }] = useDeleteAddressMutation();
   const [updateAddress, { isLoading: settingDefault }] = useUpdateAddressMutation();
   const [formState, setFormState] = useState<FormState>({ mode: "closed" });
@@ -31,6 +31,14 @@ export function AddressBook({ cities }: { cities: { id: string; nameAr: string }
   if (isLoading) {
     return (
       <p className="font-body-md text-body-md text-on-surface-variant">جارٍ التحميل...</p>
+    );
+  }
+
+  if (isError) {
+    return (
+      <p className="font-body-md text-body-md text-error">
+        تعذر تحميل العناوين. حاول تحديث الصفحة.
+      </p>
     );
   }
 

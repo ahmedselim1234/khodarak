@@ -90,6 +90,25 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
+  // Phase 6 FR-019 amendment (contracts/settings-api.md): block deleting an
+  // address that's load-bearing for a non-cancelled subscription, either as
+  // its current or its pending delivery address. Phase 1 predates
+  // subscriptions existing at all, so this couldn't have been anticipated
+  // in the original contract — an app-layer guard in front of the
+  // otherwise-unchanged owner-scoped RLS DELETE policy.
+  const { data: inUse } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .neq("status", "cancelled")
+    .or(`address_id.eq.${id},pending_address_id.eq.${id}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (inUse) {
+    return NextResponse.json({ error: "address_in_use" }, { status: 409 });
+  }
+
   const { data, error } = await supabase
     .from("addresses")
     .delete()

@@ -22,6 +22,9 @@ export type MoyasarPayment = {
     company?: string;
     name?: string;
     number?: string; // masked, e.g. "xxxx-xxxx-xxxx-1234"
+    token?: string; // present on a save_only payment's source (Phase 6 card replacement)
+    month?: string | number;
+    year?: string | number;
     transaction_url?: string;
   };
   [key: string]: unknown;

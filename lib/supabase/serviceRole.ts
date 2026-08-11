@@ -5,9 +5,13 @@ import { serverEnv } from "@/lib/env.server";
 /**
  * Service-role Supabase client — bypasses Row Level Security entirely.
  *
- * Import this ONLY from lib/payments/processPaymentOutcome.ts. Every other
- * server-side read/write in this codebase MUST continue using
- * lib/supabase/server.ts's RLS-scoped, cookie-authenticated client.
+ * Import this ONLY from lib/payments/processPaymentOutcome.ts and
+ * lib/subscription/mutateSubscription.ts (Phase 6 — subscription
+ * edit/pause/resume/cancel and payment-method replacement, per
+ * specs/007-phase-6-customer-dashboard/research.md §3/§5, extending the
+ * same rule to a second table pair). Every other server-side read/write in
+ * this codebase MUST continue using lib/supabase/server.ts's RLS-scoped,
+ * cookie-authenticated client.
  *
  * Why this exists: subscription activation, saved payment methods, payment
  * records, and generated orders must never be writable through a customer's

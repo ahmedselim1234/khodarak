@@ -45,7 +45,14 @@ export function CardTokenizationForm({
   onToken,
   onError,
 }: {
-  onToken: (token: string) => void;
+  // Phase 6 (research.md §5): also passes the $0 save_only payment's own
+  // id, needed by POST /api/payment-methods (card replacement, which has no
+  // subscription to attach a charge to) to look the payment back up
+  // authoritatively via moyasarClient.fetchPayment. Phase 5's own caller
+  // (PaymentSection) only reads the first argument — safe, since a
+  // one-argument callback can always be assigned where a two-argument one
+  // is expected.
+  onToken: (token: string, paymentId: string) => void;
   onError: (message: string) => void;
 }) {
   const [scriptReady, setScriptReady] = useState(false);
@@ -66,7 +73,7 @@ export function CardTokenizationForm({
       on_completed(payment) {
         const token = payment.source?.token;
         if (token) {
-          onToken(token);
+          onToken(token, payment.id);
         } else {
           onError("تعذر حفظ البطاقة — الرجاء المحاولة مرة أخرى");
         }

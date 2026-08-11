@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isValidWebhookSignature } from "@/lib/payments/verifyWebhookSignature";
 import { moyasarWebhookSchema } from "@/lib/validation/moyasarWebhook";
 import { processPaymentOutcome } from "@/lib/payments/processPaymentOutcome";
+import { processRenewalOutcome } from "@/lib/payments/processRenewalOutcome";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { serverEnv } from "@/lib/env.server";
 
@@ -42,7 +43,22 @@ export async function POST(request: Request) {
 
   if (ACTIONABLE_TYPES.has(type)) {
     const verifiedStatus = data.status === "paid" ? "paid" : "failed";
-    await processPaymentOutcome(data.id, verifiedStatus, result.data);
+
+    // Phase 7 amendment (contracts/webhook-dispatch-amendment.md,
+    // research.md §6): look up which processor owns this payment before
+    // dispatching — Phase 5's own first-activation charges vs. this
+    // phase's recurring renewal charges.
+    const { data: paymentRow } = await supabase
+      .from("payments")
+      .select("id, kind")
+      .eq("moyasar_payment_id", data.id)
+      .maybeSingle();
+
+    if (paymentRow?.kind === "renewal") {
+      await processRenewalOutcome(paymentRow.id, verifiedStatus, result.data, undefined);
+    } else if (paymentRow) {
+      await processPaymentOutcome(data.id, verifiedStatus, result.data);
+    }
   }
 
   await supabase

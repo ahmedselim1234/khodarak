@@ -8,6 +8,7 @@ const serverOnlySchema = z.object({
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
   MOYASAR_SECRET_KEY: z.string().min(1, "MOYASAR_SECRET_KEY is required"),
   MOYASAR_WEBHOOK_SECRET: z.string().min(1, "MOYASAR_WEBHOOK_SECRET is required"),
+  CRON_SECRET: z.string().min(1, "CRON_SECRET is required"),
 });
 
 function loadServerEnv() {
@@ -17,6 +18,7 @@ function loadServerEnv() {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     MOYASAR_SECRET_KEY: process.env.MOYASAR_SECRET_KEY,
     MOYASAR_WEBHOOK_SECRET: process.env.MOYASAR_WEBHOOK_SECRET,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
 
   if (!parsed.success) {

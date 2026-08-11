@@ -13,6 +13,31 @@ type ItemInput = { productId: string; quantity: number };
 // each of which has already done its own auth/ownership/rule-validation
 // before calling in here.
 
+// POST /api/cron/renewals' claim step (Phase 7, specs/008-phase-7-renewal-engine/research.md
+// §1): a single conditional UPDATE ... WHERE ... RETURNING — Postgres's own row-level locking
+// makes this atomic without an application-level lock. Only the caller that gets a row back may
+// proceed to charge this subscription; every other concurrent/retried invocation sees zero rows
+// and skips it. A claim older than 10 minutes is treated as stale (a crashed run's dead-man's
+// switch, not a normal state) and is reclaimable.
+export async function claimSubscriptionForRenewal(
+  subscriptionId: string
+): Promise<{ claimed: boolean }> {
+  const supabase = createServiceRoleClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const staleClaimBefore = new Date(Date.now() - 10 * 60_000).toISOString();
+
+  const { data } = await supabase
+    .from("subscriptions")
+    .update({ renewal_claimed_at: new Date().toISOString() })
+    .eq("id", subscriptionId)
+    .eq("status", "active")
+    .lte("next_renewal_attempt_date", today)
+    .or(`renewal_claimed_at.is.null,renewal_claimed_at.lt.${staleClaimBefore}`)
+    .select("id");
+
+  return { claimed: (data?.length ?? 0) > 0 };
+}
+
 // GET /api/subscriptions/[id]'s self-heal (data-model.md's state-transitions
 // note, FR-013): if a pause's resume date has already passed, flip the
 // subscription back to active before anything reads it further. No-op if

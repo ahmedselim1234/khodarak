@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import { TopNav } from "@/components/ui/TopNav";
-import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { createClient } from "@/lib/supabase/server";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 import { ProductForm } from "@/components/admin/products/ProductForm";
@@ -25,20 +24,15 @@ export default async function EditAdminProductPage({
   const product = mapProductRow(data);
 
   return (
-    <>
-      <TopNav />
-      <main>
-        <Container>
-          <div className="py-stack-lg max-w-xl mx-auto flex flex-col gap-stack-md">
-            <h1 className="font-headline-md text-headline-md text-on-background font-bold text-right">
-              تعديل {product.nameAr}
-            </h1>
-            <Card>
-              <ProductForm product={product} />
-            </Card>
-          </div>
-        </Container>
-      </main>
-    </>
+    <AdminShell activePath="/admin/products">
+      <div className="max-w-xl mx-auto flex flex-col gap-stack-md">
+        <h1 className="font-headline-md text-headline-md text-on-background font-bold text-right">
+          تعديل {product.nameAr}
+        </h1>
+        <Card>
+          <ProductForm product={product} />
+        </Card>
+      </div>
+    </AdminShell>
   );
 }

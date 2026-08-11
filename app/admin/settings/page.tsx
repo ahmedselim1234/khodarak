@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import { TopNav } from "@/components/ui/TopNav";
-import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { createClient } from "@/lib/supabase/server";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { SettingsForm } from "@/components/admin/settings/SettingsForm";
@@ -25,20 +24,15 @@ export default async function AdminSettingsPage() {
   const settings = mapSettingsRow(data);
 
   return (
-    <>
-      <TopNav />
-      <main>
-        <Container>
-          <div className="py-stack-lg max-w-2xl mx-auto flex flex-col gap-stack-md">
-            <h1 className="font-headline-md text-headline-md text-on-background font-bold text-right">
-              إعدادات التسعير والطلبات
-            </h1>
-            <Card>
-              <SettingsForm settings={settings} />
-            </Card>
-          </div>
-        </Container>
-      </main>
-    </>
+    <AdminShell activePath="/admin/settings">
+      <div className="max-w-2xl mx-auto flex flex-col gap-stack-md">
+        <h1 className="font-headline-md text-headline-md text-on-background font-bold text-right">
+          إعدادات التسعير والطلبات
+        </h1>
+        <Card>
+          <SettingsForm settings={settings} />
+        </Card>
+      </div>
+    </AdminShell>
   );
 }

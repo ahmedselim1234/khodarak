@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { productCreateSchema } from "@/lib/validation/product";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 
@@ -14,23 +15,8 @@ const IMAGE_URL_MARKER = "/product-images/";
 // (products_insert_admin) underneath (Constitution Principle V).
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const { error: authError } = await requireAdmin(supabase);
+  if (authError) return authError;
 
   const body = await request.json().catch(() => null);
   const result = productCreateSchema.safeParse(body);

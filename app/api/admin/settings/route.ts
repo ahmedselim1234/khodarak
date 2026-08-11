@@ -1,32 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { settingsUpdateSchema } from "@/lib/validation/settings";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 
 const SETTINGS_SELECT =
   "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
-
-async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: NextResponse.json({ error: "unauthenticated" }, { status: 401 }) };
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return { error: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
-  }
-
-  return { error: null };
-}
 
 // GET /api/admin/settings — per contracts/settings-admin-api.md.
 export async function GET() {

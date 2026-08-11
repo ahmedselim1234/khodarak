@@ -1,20 +1,17 @@
-import { TopNav } from "@/components/ui/TopNav";
-import { PagePlaceholder } from "@/components/ui/PagePlaceholder";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { CountersOverview } from "@/components/admin/counters/CountersOverview";
 
-// No design mockup exists for /admin yet — per Clarifications (2026-08-10),
-// this route uses the shared design tokens with a generic layout until one
-// is provided (see spec.md Assumptions and Edge Cases).
+// /admin — replaces the Phase 0 placeholder (US3). Landing view: active
+// subscriptions, orders today, revenue this month (FR-015).
 export default function AdminPage() {
   return (
-    <>
-      <TopNav />
-      <main>
-        <PagePlaceholder
-          icon="admin_panel_settings"
-          title="لوحة الإدارة"
-          description="لا يوجد تصميم جاهز لهذه الصفحة بعد — ستُبنى إدارة المنتجات والطلبات والإعدادات في مرحلة عمليات الإدارة القادمة، باستخدام نفس عناصر التصميم المشتركة."
-        />
-      </main>
-    </>
+    <AdminShell activePath="/admin">
+      <div className="flex flex-col gap-stack-lg">
+        <h1 className="font-headline-md text-headline-md text-on-background font-bold">
+          لوحة التحكم
+        </h1>
+        <CountersOverview />
+      </div>
+    </AdminShell>
   );
 }

@@ -138,20 +138,31 @@ export async function savePendingEdit(params: {
 // Clarification 4, FR-010). Any existing pending change is left untouched;
 // it still applies once the subscription is active again and
 // pending_effective_from arrives.
+//
+// Phase 8 (specs/009-phase-8-admin-operations): also the admin pause path
+// — `adminId`/`reason` are set only when an operator initiated it (stamped
+// onto the same subscription_pauses row, data-model.md), and `resumeDate`
+// becomes optional so an admin can leave a pause indefinite (customer
+// pauses, Phase 6, always supply one).
 export async function pauseSubscription(params: {
   subscriptionId: string;
-  resumeDate: string;
+  resumeDate?: string | null;
+  adminId?: string;
+  reason?: string;
 }): Promise<void> {
   const supabase = createServiceRoleClient();
+  const resumeDate = params.resumeDate ?? null;
 
   await supabase
     .from("subscriptions")
-    .update({ status: "paused", paused_until: params.resumeDate })
+    .update({ status: "paused", paused_until: resumeDate })
     .eq("id", params.subscriptionId);
 
   await supabase.from("subscription_pauses").insert({
     subscription_id: params.subscriptionId,
-    resume_date: params.resumeDate,
+    resume_date: resumeDate,
+    initiated_by_admin_id: params.adminId ?? null,
+    reason: params.reason ?? null,
   });
 }
 
@@ -178,7 +189,13 @@ export async function resumeSubscription(params: {
 
 // POST .../cancel. Immediate — overrides the cutoff lock, terminal
 // (FR-014).
-export async function cancelSubscription(subscriptionId: string): Promise<void> {
+//
+// Phase 8: also the admin cancel path — `adminId`/`reason` set only when
+// an operator initiated it (data-model.md).
+export async function cancelSubscription(
+  subscriptionId: string,
+  admin?: { adminId: string; reason: string }
+): Promise<void> {
   const supabase = createServiceRoleClient();
 
   await supabase
@@ -190,6 +207,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
       pending_address_id: null,
       pending_price_breakdown: null,
       pending_effective_from: null,
+      ...(admin && { cancelled_by_admin_id: admin.adminId, cancel_reason: admin.reason }),
     })
     .eq("id", subscriptionId);
 }

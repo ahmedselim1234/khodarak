@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { productUpdateSchema } from "@/lib/validation/product";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 
@@ -7,28 +8,6 @@ const PRODUCT_SELECT =
   "id, name_ar, category, price, unit, image_url, is_available, min_qty, max_qty, sort_order, created_at";
 
 const IMAGE_URL_MARKER = "/product-images/";
-
-async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: NextResponse.json({ error: "unauthenticated" }, { status: 401 }) };
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return { error: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
-  }
-
-  return { error: null };
-}
 
 // PATCH /api/admin/products/[id] — per contracts/products-admin-api.md.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

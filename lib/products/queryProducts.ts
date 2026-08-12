@@ -1,10 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { createCatalogClient } from "@/lib/supabase/publicCatalog";
 import { mapProductRow, type ProductCategory } from "@/lib/products/mapProductRow";
 
 const PRODUCT_SELECT =
   "id, name_ar, category, price, unit, image_url, is_available, min_qty, max_qty, sort_order, created_at";
 
 export const PAGE_SIZE = 12;
+
+// The catalog is public data (`products_select_all`), so it is read through
+// the cacheable anonymous client rather than the caller's cookie-bound one.
+// 60s keeps an admin's edit visible within a minute while collapsing a burst
+// of catalog traffic into a single Supabase query.
+const CATALOG_REVALIDATE_SECONDS = 60;
 
 export type CatalogSort = "price_asc" | "price_desc" | "newest";
 
@@ -51,7 +57,7 @@ export function parseCatalogSearchParams(params: CatalogSearchParams): CatalogQu
 }
 
 export async function queryProducts(query: CatalogQuery) {
-  const supabase = await createClient();
+  const supabase = createCatalogClient(CATALOG_REVALIDATE_SECONDS);
 
   let request = supabase
     .from("products")

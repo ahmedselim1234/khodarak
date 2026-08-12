@@ -1,77 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { AdminCity } from "@/lib/store/adminCitiesApi";
+import { Table, THead, TBody, TRow, TH, TD } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { formatPrice } from "@/lib/format";
 import { CityForm } from "./CityForm";
 
 type FormState = { mode: "closed" } | { mode: "create" } | { mode: "edit"; city: AdminCity };
 
 // "use client" — list + inline add/edit (US5). Receives the server-fetched
-// list as a prop; router.refresh() inside CityForm re-fetches it after a
-// mutation, so no separate client-side query cache is needed here.
+// list as a prop; `pending` holds rows the user has just submitted but the
+// server hasn't confirmed, so a save lands in the table immediately and
+// router.refresh() later replaces it with the canonical row.
 export function CityTable({ cities }: { cities: AdminCity[] }) {
   const [formState, setFormState] = useState<FormState>({ mode: "closed" });
+  const [pending, setPending] = useState<Record<string, AdminCity>>({});
+
+  const rows = useMemo(() => {
+    const merged = cities.map((city) => pending[city.id] ?? city);
+    const created = Object.values(pending).filter(
+      (city) => !cities.some((existing) => existing.id === city.id)
+    );
+    return [...merged, ...created];
+  }, [cities, pending]);
+
+  function revert(id: string) {
+    setPending((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  }
 
   return (
     <div className="flex flex-col gap-stack-md">
-      <div className="overflow-x-auto">
-        <table className="w-full text-right">
-          <thead>
-            <tr className="border-b border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant">
-              <th className="py-3 px-2">المدينة</th>
-              <th className="py-3 px-2">رسوم التوصيل</th>
-              <th className="py-3 px-2">الحالة</th>
-              <th className="py-3 px-2">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cities.map((city) => (
-              <tr key={city.id} className="border-b border-outline-variant/10">
-                <td className="py-3 px-2 font-body-md text-body-md">{city.nameAr}</td>
-                <td className="py-3 px-2 font-body-md text-body-md">
-                  {city.deliveryFeeOverride !== null
-                    ? `${city.deliveryFeeOverride.toFixed(2)} ر.س`
-                    : "—"}
-                </td>
-                <td className="py-3 px-2 font-label-sm text-label-sm">
-                  <span className={city.isActive ? "text-primary" : "text-error"}>
-                    {city.isActive ? "نشطة" : "غير نشطة"}
-                  </span>
-                </td>
-                <td className="py-3 px-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormState({ mode: "edit", city })}
-                    className="font-label-sm text-label-sm text-primary hover:underline"
-                  >
-                    تعديل
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <THead>
+          <TRow>
+            <TH>المدينة</TH>
+            <TH numeric>رسوم التوصيل</TH>
+            <TH>الحالة</TH>
+            <TH>إجراءات</TH>
+          </TRow>
+        </THead>
+        <TBody>
+          {rows.map((city) => (
+            <TRow key={city.id} interactive>
+              <TD>{city.nameAr}</TD>
+              <TD numeric>
+                {city.deliveryFeeOverride !== null ? formatPrice(city.deliveryFeeOverride) : "—"}
+              </TD>
+              <TD>
+                <Badge tone={city.isActive ? "success" : "neutral"}>
+                  {city.isActive ? "نشطة" : "غير نشطة"}
+                </Badge>
+              </TD>
+              <TD>
+                <button
+                  type="button"
+                  onClick={() => setFormState({ mode: "edit", city })}
+                  className="text-caption font-semibold text-primary transition-opacity duration-fast hover:underline"
+                >
+                  تعديل
+                </button>
+              </TD>
+            </TRow>
+          ))}
+        </TBody>
+      </Table>
 
-      {formState.mode === "closed" && (
-        <button
+      {formState.mode === "closed" ? (
+        <Button
           type="button"
+          className="self-start"
           onClick={() => setFormState({ mode: "create" })}
-          className="self-start px-4 py-2 rounded-full bg-primary text-on-primary font-bold"
         >
           إضافة مدينة
-        </button>
-      )}
-
-      {formState.mode === "create" && (
+        </Button>
+      ) : (
         <CityForm
-          onSuccess={() => setFormState({ mode: "closed" })}
-          onCancel={() => setFormState({ mode: "closed" })}
-        />
-      )}
-      {formState.mode === "edit" && (
-        <CityForm
-          existingCity={formState.city}
+          existingCity={formState.mode === "edit" ? formState.city : undefined}
+          onOptimistic={(city) => setPending((current) => ({ ...current, [city.id]: city }))}
+          onRevert={revert}
           onSuccess={() => setFormState({ mode: "closed" })}
           onCancel={() => setFormState({ mode: "closed" })}
         />

@@ -8,9 +8,11 @@ import { useAdminCancelSubscriptionMutation } from "@/lib/store/adminSubscriptio
 export function AdminCancelDialog({
   subscriptionId,
   onClose,
+  onCancelled,
 }: {
   subscriptionId: string;
   onClose: () => void;
+  onCancelled?: () => void;
 }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -25,6 +27,7 @@ export function AdminCancelDialog({
     setError(null);
     try {
       await cancelSubscription({ id: subscriptionId, reason }).unwrap();
+      onCancelled?.();
       router.refresh();
       onClose();
     } catch {

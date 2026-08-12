@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, UserCircle2 } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, UserCircle2 } from "lucide-react";
 import { Container } from "./Container";
 import { Logo } from "./Logo";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +10,7 @@ const links = [
   { href: "/", label: "الرئيسية" },
   { href: "/browse", label: "المنتجات" },
   { href: "/subscription", label: "الاشتراكات" },
+  { href: "/pricing-preview", label: "حاسبة الأسعار" },
 ];
 
 export async function TopNav() {
@@ -17,6 +18,19 @@ export async function TopNav() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // An admin's control panel is /admin, not the customer dashboard — same
+  // rule the login redirect applies. Read only when signed in, so a signed-out
+  // visitor's nav costs no extra query.
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    isAdmin = profile?.role === "admin";
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-outline-variant glass-effect">
@@ -37,6 +51,7 @@ export async function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch
                 className="font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary"
               >
                 {link.label}
@@ -49,17 +64,23 @@ export async function TopNav() {
             {user ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={isAdmin ? "/admin" : "/dashboard"}
+                  prefetch
                   className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
-                  aria-label="لوحة التحكم"
+                  aria-label={isAdmin ? "لوحة الإدارة" : "لوحة التحكم"}
                 >
-                  <LayoutDashboard className="size-5" aria-hidden="true" />
+                  {isAdmin ? (
+                    <ShieldCheck className="size-5" aria-hidden="true" />
+                  ) : (
+                    <LayoutDashboard className="size-5" aria-hidden="true" />
+                  )}
                 </Link>
                 <SignOutButton />
               </>
             ) : (
               <Link
                 href="/login"
+                prefetch
                 className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
                 aria-label="تسجيل الدخول"
               >
@@ -68,6 +89,21 @@ export async function TopNav() {
             )}
           </div>
         </nav>
+
+        {/* Mobile: the same destinations as a single scrollable row, rather
+            than being hidden entirely below md as they were before. */}
+        <div className="no-scrollbar -mx-margin-mobile flex gap-stack-md overflow-x-auto px-margin-mobile pb-2.5 text-small md:hidden">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              prefetch
+              className="whitespace-nowrap font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
       </Container>
     </header>
   );

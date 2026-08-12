@@ -43,11 +43,10 @@ export function LoginForm() {
     setSubmitting(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword(result.data);
-
-    setSubmitting(false);
+    const { data: signInData, error } = await supabase.auth.signInWithPassword(result.data);
 
     if (error) {
+      setSubmitting(false);
       // Never confirm which of email/password was wrong — mirrors FR-006's
       // non-enumeration principle, applied to login as well as reset.
       const rateLimited = /rate limit|too many/i.test(error.message);
@@ -55,32 +54,59 @@ export function LoginForm() {
       return;
     }
 
+    const userId = signInData.user?.id ?? null;
+
     // FR-015: merge the guest (device-local) cart into the account's
     // server-side cart right after a successful sign-in, then clear the
     // guest cart — cartApi's mergeCart mutation invalidates the "Cart" tag
     // on success, so the next getCart read reflects the merged state.
-    if (guestCartItems.length > 0) {
-      try {
-        await mergeCart({
-          items: guestCartItems.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        }).unwrap();
-        dispatch(clearCart());
-      } catch {
-        // Merge failure shouldn't block sign-in — the guest cart simply
-        // stays in localStorage to retry merging on a future login.
-      }
-    }
+    // Runs in parallel with the role lookup below; neither blocks the other.
+    const mergePromise =
+      guestCartItems.length > 0
+        ? mergeCart({
+            items: guestCartItems.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          })
+            .unwrap()
+            .then(() => {
+              dispatch(clearCart());
+            })
+            .catch(() => {
+              // Merge failure shouldn't block sign-in — the guest cart simply
+              // stays in localStorage to retry merging on a future login.
+            })
+        : Promise.resolve();
+
+    // An admin's home is /admin, not /dashboard (which renders the *customer*
+    // subscription view and would show an admin an empty "no subscription
+    // yet" state). `profiles_select_own` (20260810120000_profiles.sql) is what
+    // makes this self-read possible client-side; middleware.ts re-checks the
+    // same role server-side before /admin renders, so a stale or spoofed
+    // answer here can only ever cost a redirect, never grant access.
+    const rolePromise = userId
+      ? supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single()
+          .then(({ data }) => (data?.role === "admin" ? "admin" : "customer"))
+      : Promise.resolve("customer" as const);
+
+    const [, role] = await Promise.all([mergePromise, rolePromise]);
+
+    setSubmitting(false);
 
     // Only ever navigate to a same-origin relative path from this param —
     // never trust it as an absolute/external URL (open-redirect guard).
     const redirectParam = searchParams.get("redirect");
-    const redirectTo =
+    const safeRedirect =
       redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
         ? redirectParam
-        : "/dashboard";
+        : null;
+
+    const redirectTo = safeRedirect ?? (role === "admin" ? "/admin" : "/dashboard");
 
     router.push(redirectTo);
     router.refresh();
@@ -108,7 +134,7 @@ export function LoginForm() {
       {formError && (
         <p className="font-label-sm text-label-sm text-error text-right">{formError}</p>
       )}
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" className="w-full" loading={submitting}>
         {submitting ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
       </Button>
     </form>

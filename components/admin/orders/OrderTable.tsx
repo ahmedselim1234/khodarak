@@ -1,5 +1,17 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AdminOrderRow } from "@/lib/admin/queryAdminOrders";
-import { OrderRowActions } from "./OrderRowActions";
+import { useUpdateOrderStatusMutation } from "@/lib/store/adminOrdersApi";
+import {
+  isValidOrderStatusTransition,
+  type OrderStatus,
+} from "@/lib/orders/orderStatusTransition";
+import { Table, THead, TBody, TRow, TH, TD } from "@/components/ui/Table";
+import { StatusPill } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Feedback";
+import { formatPrice } from "@/lib/format";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "قيد الانتظار",
@@ -8,45 +20,105 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "ملغي",
 };
 
+const ACTION_LABELS: Record<OrderStatus, string> = {
+  pending: "",
+  out_for_delivery: "قيد التوصيل",
+  delivered: "تم التوصيل",
+  cancelled: "إلغاء",
+};
+
+const ALL_STATUSES: OrderStatus[] = ["pending", "out_for_delivery", "delivered", "cancelled"];
+
+// "use client" — the status cell and its actions have to move together for a
+// transition to feel instant, so the whole table is the client boundary now
+// rather than just the buttons. Rows are still fetched server-side and passed
+// in; `overrides` is only the not-yet-confirmed layer on top.
 export function OrderTable({ orders }: { orders: AdminOrderRow[] }) {
+  const router = useRouter();
+  const [overrides, setOverrides] = useState<Record<string, OrderStatus>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
+
+  async function handleTransition(id: string, from: OrderStatus, to: OrderStatus) {
+    setError(null);
+    setOverrides((current) => ({ ...current, [id]: to }));
+
+    try {
+      await updateOrderStatus({ id, status: to }).unwrap();
+      router.refresh();
+    } catch (err) {
+      setOverrides((current) => ({ ...current, [id]: from }));
+      const data = (err as { data?: { error?: string } })?.data;
+      setError(
+        data?.error === "status_changed"
+          ? "تم تغيير حالة الطلب من قِبل مشرف آخر — يرجى إعادة التحميل."
+          : "تعذر تحديث حالة الطلب."
+      );
+    }
+  }
+
   if (orders.length === 0) {
     return (
-      <p className="font-body-md text-body-md text-on-surface-variant text-center py-stack-lg">
+      <p className="py-stack-lg text-center text-small text-on-surface-variant">
         لا توجد طلبات مطابقة
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-right">
-        <thead>
-          <tr className="border-b border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant">
-            <th className="py-3 px-2">العميل</th>
-            <th className="py-3 px-2">تاريخ التوصيل</th>
-            <th className="py-3 px-2">الحالة</th>
-            <th className="py-3 px-2">الإجمالي</th>
-            <th className="py-3 px-2">إجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} className="border-b border-outline-variant/10">
-              <td className="py-3 px-2 font-body-md text-body-md">{order.customerName}</td>
-              <td className="py-3 px-2 font-body-md text-body-md">{order.scheduledDate}</td>
-              <td className="py-3 px-2 font-label-sm text-label-sm">
-                {STATUS_LABELS[order.status] ?? order.status}
-              </td>
-              <td className="py-3 px-2 font-body-md text-body-md">
-                {order.totalPerDelivery.toFixed(2)} ر.س
-              </td>
-              <td className="py-3 px-2">
-                <OrderRowActions id={order.id} status={order.status} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-stack-sm">
+      {error && <Alert tone="danger">{error}</Alert>}
+
+      <Table>
+        <THead>
+          <TRow>
+            <TH>العميل</TH>
+            <TH>تاريخ التوصيل</TH>
+            <TH>الحالة</TH>
+            <TH numeric>الإجمالي</TH>
+            <TH>إجراءات</TH>
+          </TRow>
+        </THead>
+        <TBody>
+          {orders.map((order) => {
+            const status = overrides[order.id] ?? order.status;
+            const transitions = ALL_STATUSES.filter((next) =>
+              isValidOrderStatusTransition(status, next)
+            );
+
+            return (
+              <TRow key={order.id} interactive>
+                <TD>{order.customerName}</TD>
+                <TD className="tabular">{order.scheduledDate}</TD>
+                <TD>
+                  <StatusPill status={status} label={STATUS_LABELS[status] ?? status} />
+                </TD>
+                <TD numeric>{formatPrice(order.totalPerDelivery)}</TD>
+                <TD>
+                  {transitions.length === 0 ? (
+                    <span className="text-caption text-on-surface-variant">نهائي</span>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      {transitions.map((next) => (
+                        <button
+                          key={next}
+                          type="button"
+                          onClick={() => handleTransition(order.id, status, next)}
+                          className={`text-caption font-semibold transition-opacity duration-fast hover:underline ${
+                            next === "cancelled" ? "text-error" : "text-primary"
+                          }`}
+                        >
+                          {ACTION_LABELS[next]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </TD>
+              </TRow>
+            );
+          })}
+        </TBody>
+      </Table>
     </div>
   );
 }

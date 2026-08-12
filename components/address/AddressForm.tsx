@@ -52,7 +52,8 @@ export function AddressForm({
       if (existingAddress) {
         await updateAddress({ id: existingAddress.id, body: result.data }).unwrap();
       } else {
-        await createAddress(result.data).unwrap();
+        const cityName = cities.find((city) => city.id === result.data.cityId)?.nameAr;
+        await createAddress({ body: result.data, cityName }).unwrap();
       }
       onSuccess();
     } catch {

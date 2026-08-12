@@ -62,6 +62,42 @@ export const dashboardApi = createApi({
     >({
       query: ({ id, body }) => ({ url: `/${id}`, method: "PATCH", body }),
       invalidatesTags: (_result, _error, { id }) => [{ type: "Subscription", id }],
+      async onQueryStarted({ id, body }, { dispatch, queryFulfilled, getState }) {
+        // Only patch optimistically when the edit is certain to apply right
+        // away. Inside the cutoff the server defers it to a pendingChange, and
+        // guessing that shape (effectiveFrom, a repriced breakdown) client-side
+        // would be a fabrication — that case waits for the response.
+        const current = dashboardApi.endpoints.getSubscription.select(id)(
+          getState() as never
+        ).data;
+
+        const patch =
+          current && !current.insideEditCutoff
+            ? dispatch(
+                dashboardApi.util.updateQueryData("getSubscription", id, (draft) => {
+                  draft.frequency = body.frequency;
+                  draft.addressId = body.addressId;
+                  draft.items = body.items.map((item) => {
+                    const existing = draft.items.find(
+                      (line) => line.productId === item.productId
+                    );
+                    return {
+                      productId: item.productId,
+                      productNameAr: existing?.productNameAr ?? "",
+                      unitPrice: existing?.unitPrice ?? 0,
+                      quantity: item.quantity,
+                    };
+                  });
+                })
+              )
+            : null;
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patch?.undo();
+        }
+      },
     }),
     pauseSubscription: builder.mutation<
       { status: string; pausedUntil: string },
@@ -73,14 +109,56 @@ export const dashboardApi = createApi({
         body: { resumeDate },
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: "Subscription", id }],
+      async onQueryStarted({ id, resumeDate }, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          dashboardApi.util.updateQueryData("getSubscription", id, (draft) => {
+            draft.status = "paused";
+            draft.pausedUntil = resumeDate;
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
     resumeSubscription: builder.mutation<{ status: string; nextDeliveryDate: string }, string>({
       query: (id) => ({ url: `/${id}/resume`, method: "POST" }),
       invalidatesTags: (_result, _error, id) => [{ type: "Subscription", id }],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          dashboardApi.util.updateQueryData("getSubscription", id, (draft) => {
+            draft.status = "active";
+            draft.pausedUntil = null;
+          })
+        );
+        try {
+          // The server also recomputes nextDeliveryDate on resume, which this
+          // patch deliberately does not guess — the invalidation that follows
+          // brings back the real date.
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
     cancelSubscription: builder.mutation<{ status: string }, string>({
       query: (id) => ({ url: `/${id}/cancel`, method: "POST", body: { confirm: true } }),
       invalidatesTags: (_result, _error, id) => [{ type: "Subscription", id }],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          dashboardApi.util.updateQueryData("getSubscription", id, (draft) => {
+            draft.status = "cancelled";
+            draft.pendingChange = null;
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
   }),
 });

@@ -2,37 +2,29 @@
 
 import Link from "next/link";
 import { ShoppingBasket } from "lucide-react";
-import { useSelector } from "react-redux";
-import { useAuthUserId } from "@/lib/supabase/useAuthUser";
-import { useGetCartQuery } from "@/lib/store/cartApi";
-import { selectGuestCartCount } from "@/lib/cart/cartSlice";
+import { useCart } from "@/lib/cart/useCart";
 
-// Header cart icon card (FR-013) — reads the guest cartSlice or the
-// signed-in cartApi query depending on auth state; a small badge shows the
-// item count once the cart isn't empty. Lives in TopNav's icon row instead
-// of as a bar fixed to the viewport bottom, which used to overlap page
-// content (e.g. the subscription builder's own delivery-date picker).
+// Header cart button — links to the standalone /cart page. Reads through
+// useCart, so the badge reflects the guest slice or the signed-in query
+// without this component knowing which. Because both write paths are
+// optimistic, the badge increments in the same frame as an "add" press
+// anywhere in the app.
 export function CartBar() {
-  const userId = useAuthUserId();
-  const signedIn = Boolean(userId);
-
-  const guestCount = useSelector(selectGuestCartCount);
-  const { data: cart } = useGetCartQuery(undefined, { skip: !signedIn });
-
-  const itemCount = signedIn ? (cart?.itemCount ?? 0) : guestCount;
+  const { itemCount } = useCart();
 
   return (
     <Link
-      href="/subscription"
+      href="/cart"
+      prefetch
       className="relative rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
-      aria-label="الصندوق"
+      aria-label={itemCount > 0 ? `الصندوق — ${itemCount} صنف` : "الصندوق"}
     >
       <ShoppingBasket className="size-5" aria-hidden="true" />
       {itemCount > 0 && (
         <span
           // -end-1 rather than -left-1 so the badge stays on the outer corner
           // when the layout mirrors.
-          className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-secondary text-on-secondary text-[11px] font-bold leading-none tabular"
+          className="absolute -top-1 -end-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-secondary px-1 text-[11px] font-bold leading-none text-on-secondary tabular"
           aria-hidden
         >
           {itemCount}

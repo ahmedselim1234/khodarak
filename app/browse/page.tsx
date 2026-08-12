@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/ui/TopNav";
+import { Footer } from "@/components/ui/Footer";
 import { Container } from "@/components/ui/Container";
 import { CategoryTabs } from "@/components/catalog/CategoryTabs";
 import { FilterSidebar } from "@/components/catalog/FilterSidebar";
@@ -26,6 +27,9 @@ export default async function BrowsePage({
       <main>
         <Container>
           <div className="py-stack-lg">
+            <h1 className="mb-stack-md text-display-lg-mobile text-on-background md:text-display-lg">
+              المنتجات
+            </h1>
             <CategoryTabs activeCategory={query.category} />
             <div className="flex flex-col md:flex-row-reverse gap-gutter mt-stack-lg">
               <FilterSidebar />
@@ -42,6 +46,7 @@ export default async function BrowsePage({
           </div>
         </Container>
       </main>
+      <Footer />
     </>
   );
 }

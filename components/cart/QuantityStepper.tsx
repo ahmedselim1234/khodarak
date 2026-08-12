@@ -1,12 +1,7 @@
 "use client";
 
-import { useDispatch, useSelector } from "react-redux";
 import { Minus, Plus } from "lucide-react";
-import { useAuthUserId } from "@/lib/supabase/useAuthUser";
-import { useGetCartQuery, useUpsertCartItemMutation } from "@/lib/store/cartApi";
-import { setItemQuantity } from "@/lib/cart/cartSlice";
-import { clampQuantity } from "@/lib/cart/clampQuantity";
-import type { RootState } from "@/lib/store";
+import { useCart } from "@/lib/cart/useCart";
 
 export type StepperProduct = {
   id: string;
@@ -19,89 +14,78 @@ export type StepperProduct = {
   isAvailable: boolean;
 };
 
-// Used on both the grid card and the detail page (US2/US4). Calls the
-// signed-in cartApi mutation or the guest cartSlice action depending on
-// auth state, clamped via clampQuantity for instant feedback (FR-011/012).
-export function QuantityStepper({ product }: { product: StepperProduct }) {
-  const userId = useAuthUserId();
-  const dispatch = useDispatch();
-  const signedIn = Boolean(userId);
+const sizeClasses = {
+  md: { add: "size-9", icon: "size-4", step: "size-7", count: "w-6 text-small" },
+  lg: { add: "size-11", icon: "size-5", step: "size-9", count: "w-8 text-body-md" },
+} as const;
 
-  const guestQuantity = useSelector(
-    (state: RootState) => state.cart.items[product.id]?.quantity ?? 0
-  );
-  const { data: cart } = useGetCartQuery(undefined, { skip: !signedIn });
-  const [upsertCartItem, { isLoading: upserting }] = useUpsertCartItemMutation();
+// Used on the grid card, the detail page, and the /cart page (US2/US4).
+// Every press is applied locally first — the guest cart is a synchronous
+// reducer and the signed-in cart is an optimistic RTK Query patch — so the
+// number changes in the same frame as the click, with no spinner and no
+// disabled state while a request is in flight (FR-011/012).
+export function QuantityStepper({
+  product,
+  size = "md",
+}: {
+  product: StepperProduct;
+  size?: keyof typeof sizeClasses;
+}) {
+  const { quantityOf, setQuantity } = useCart();
+  const quantity = quantityOf(product.id);
+  const cls = sizeClasses[size];
 
-  const quantity = signedIn
-    ? (cart?.items.find((item) => item.productId === product.id)?.quantity ?? 0)
-    : guestQuantity;
-
-  const bounds = { minQty: product.minQty, maxQty: product.maxQty };
-
-  async function applyQuantity(next: number) {
-    const clamped = clampQuantity(next, bounds);
-
-    if (signedIn) {
-      await upsertCartItem({ productId: product.id, quantity: clamped }).unwrap().catch(() => {});
-      return;
-    }
-
-    dispatch(
-      setItemQuantity({
-        productId: product.id,
-        quantity: clamped,
-        name: product.nameAr,
-        price: product.price,
-        unit: product.unit,
-        imageUrl: product.imageUrl,
-        maxQty: product.maxQty,
-      })
-    );
-  }
+  const line = {
+    productId: product.id,
+    name: product.nameAr,
+    price: product.price,
+    unit: product.unit,
+    imageUrl: product.imageUrl,
+    isAvailable: product.isAvailable,
+    minQty: product.minQty,
+    maxQty: product.maxQty,
+  };
 
   // FR-018: can't newly add an unavailable product, but an existing
   // quantity may still be decreased.
   if (quantity === 0 && !product.isAvailable) {
-    return (
-      <span className="font-label-sm text-label-sm text-outline">غير متوفر</span>
-    );
+    return <span className="text-caption font-semibold text-outline">غير متوفر</span>;
   }
 
   if (quantity === 0) {
     return (
       <button
         type="button"
-        onClick={() => applyQuantity(product.minQty)}
-        disabled={upserting}
+        onClick={() => setQuantity(line, product.minQty)}
         aria-label="أضف للصندوق"
-        className="flex size-9 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm transition-[background-color,box-shadow] duration-fast hover:bg-primary-container hover:text-on-primary-container hover:shadow-md disabled:opacity-45"
+        className={`flex ${cls.add} items-center justify-center rounded-full bg-primary text-on-primary shadow-sm transition-[background-color,box-shadow] duration-fast hover:bg-primary-container hover:text-on-primary-container hover:shadow-md`}
       >
-        <Plus className="size-4" aria-hidden="true" />
+        <Plus className={cls.icon} aria-hidden="true" />
       </button>
     );
   }
 
   return (
-    <div className="flex items-center bg-surface-container-low rounded-full px-2 py-1 border border-outline-variant gap-1">
+    <div className="flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-low px-2 py-1">
       <button
         type="button"
-        onClick={() => applyQuantity(quantity - 1)}
-        disabled={upserting}
+        onClick={() => setQuantity(line, quantity - 1)}
         aria-label="إنقاص الكمية"
-        className="flex size-7 items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high disabled:opacity-45"
+        className={`flex ${cls.step} items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high`}
       >
-        <Minus className="size-4" aria-hidden="true" />
+        <Minus className={cls.icon} aria-hidden="true" />
       </button>
-      <span className="w-6 text-center text-small font-bold tabular">{quantity}</span>
+      <span className={`${cls.count} text-center font-bold tabular`} aria-live="polite">
+        {quantity}
+      </span>
       <button
         type="button"
-        onClick={() => applyQuantity(quantity + 1)}
-        disabled={upserting || !product.isAvailable}
+        onClick={() => setQuantity(line, quantity + 1)}
+        disabled={!product.isAvailable || quantity >= product.maxQty}
         aria-label="زيادة الكمية"
-        className="flex size-7 items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high disabled:opacity-45"
+        className={`flex ${cls.step} items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high disabled:opacity-40`}
       >
-        <Plus className="size-4" aria-hidden="true" />
+        <Plus className={cls.icon} aria-hidden="true" />
       </button>
     </div>
   );

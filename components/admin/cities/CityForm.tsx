@@ -2,20 +2,32 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { useCreateCityMutation, useUpdateCityMutation, type AdminCity } from "@/lib/store/adminCitiesApi";
+import {
+  useCreateCityMutation,
+  useUpdateCityMutation,
+  type AdminCity,
+} from "@/lib/store/adminCitiesApi";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
 // "use client" — create-and-edit in one component, mirroring
 // components/address/AddressForm.tsx's own create-vs-edit-in-one-form shape.
+//
+// `onOptimistic` is handed the row as the user typed it the instant submit is
+// pressed, so CityTable can show it before the round trip; `onRevert` undoes
+// that if the request is rejected.
 export function CityForm({
   existingCity,
   onSuccess,
   onCancel,
+  onOptimistic,
+  onRevert,
 }: {
   existingCity?: AdminCity;
   onSuccess: () => void;
   onCancel: () => void;
+  onOptimistic?: (city: AdminCity) => void;
+  onRevert?: (id: string) => void;
 }) {
   const router = useRouter();
   const [nameAr, setNameAr] = useState(existingCity?.nameAr ?? "");
@@ -41,6 +53,9 @@ export function CityForm({
       deliveryFeeOverride: deliveryFeeOverride ? Number(deliveryFeeOverride) : null,
     };
 
+    const optimisticId = existingCity?.id ?? `optimistic:${Date.now()}`;
+    onOptimistic?.({ id: optimisticId, ...body });
+
     try {
       if (existingCity) {
         await updateCity({ id: existingCity.id, body }).unwrap();
@@ -50,6 +65,7 @@ export function CityForm({
       router.refresh();
       onSuccess();
     } catch (err) {
+      onRevert?.(optimisticId);
       const data = (err as { data?: { fields?: Record<string, string> } })?.data;
       if (data?.fields) {
         setFieldErrors(data.fields);
@@ -62,7 +78,7 @@ export function CityForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-stack-md w-full bg-surface-container-lowest rounded-organic p-stack-lg border border-outline-variant/30"
+      className="flex w-full flex-col gap-stack-md rounded-organic border border-outline-variant bg-surface-container-lowest p-stack-lg"
       noValidate
     >
       <FormField
@@ -79,21 +95,19 @@ export function CityForm({
         onChange={(e) => setDeliveryFeeOverride(e.target.value)}
         error={fieldErrors.deliveryFeeOverride}
       />
-      <label className="flex items-center gap-2 cursor-pointer">
+      <label className="flex cursor-pointer items-center gap-2">
         <input
           type="checkbox"
           checked={isActive}
           onChange={(e) => setIsActive(e.target.checked)}
-          className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
+          className="size-4 rounded border-outline-variant text-primary focus:ring-primary"
         />
-        <span className="font-body-md text-body-md">نشطة (متاحة للعملاء)</span>
+        <span className="text-small">نشطة (متاحة للعملاء)</span>
       </label>
-      {formError && (
-        <p className="font-label-sm text-label-sm text-error text-right">{formError}</p>
-      )}
+      {formError && <p className="text-caption text-error">{formError}</p>}
       <div className="flex gap-stack-sm">
-        <Button type="submit" className="flex-1" disabled={submitting}>
-          {submitting ? "جارٍ الحفظ..." : "حفظ المدينة"}
+        <Button type="submit" className="flex-1" loading={submitting}>
+          حفظ المدينة
         </Button>
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
           إلغاء

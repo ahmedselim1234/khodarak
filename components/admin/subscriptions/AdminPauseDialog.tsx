@@ -10,9 +10,11 @@ import { useAdminPauseSubscriptionMutation } from "@/lib/store/adminSubscription
 export function AdminPauseDialog({
   subscriptionId,
   onClose,
+  onPaused,
 }: {
   subscriptionId: string;
   onClose: () => void;
+  onPaused?: () => void;
 }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -32,6 +34,7 @@ export function AdminPauseDialog({
         reason,
         resumeDate: resumeDate || null,
       }).unwrap();
+      onPaused?.();
       router.refresh();
       onClose();
     } catch {

@@ -8,6 +8,7 @@ const columns = [
       { href: "/browse", label: "كل المنتجات" },
       { href: "/subscription", label: "ابدأ اشتراكك" },
       { href: "/pricing-preview", label: "حاسبة الأسعار" },
+      { href: "/cart", label: "صندوقي" },
     ],
   },
   {

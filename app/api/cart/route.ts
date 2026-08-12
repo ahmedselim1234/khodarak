@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 const CART_SELECT =
-  "quantity, products(id, name_ar, price, unit, image_url, is_available, max_qty)";
+  "quantity, products(id, name_ar, price, unit, image_url, is_available, min_qty, max_qty)";
 
 type CartItemRow = {
   quantity: number;
@@ -14,6 +14,7 @@ type CartItemRow = {
         unit: string;
         image_url: string;
         is_available: boolean;
+        min_qty: number;
         max_qty: number;
       }
     | Array<{
@@ -23,6 +24,7 @@ type CartItemRow = {
         unit: string;
         image_url: string;
         is_available: boolean;
+        min_qty: number;
         max_qty: number;
       }>
     | null;
@@ -62,6 +64,7 @@ export async function GET() {
         unit: product.unit,
         imageUrl: product.image_url,
         isAvailable: product.is_available,
+        minQty: product.min_qty,
         maxQty: product.max_qty,
       };
     })

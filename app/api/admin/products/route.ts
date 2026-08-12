@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { productCreateSchema } from "@/lib/validation/product";
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
   if (error || !data) {
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
+
+  // The storefront reads the catalog through a tagged, cached fetch
+  // (lib/supabase/publicCatalog.ts). Without this, an admin's change would
+  // only appear once the 60s revalidation window elapsed. Next 16 requires
+  // the second argument; `{ expire: 0 }` is "drop it now".
+  revalidateTag("catalog", { expire: 0 });
 
   return NextResponse.json({ product: mapProductRow(data) }, { status: 201 });
 }

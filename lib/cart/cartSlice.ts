@@ -7,6 +7,7 @@ export type GuestCartItem = {
   price: number;
   unit: string;
   imageUrl: string;
+  minQty: number;
   maxQty: number;
 };
 
@@ -25,7 +26,15 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     hydrate(state, action: PayloadAction<Record<string, GuestCartItem>>) {
-      state.items = action.payload;
+      // `minQty` was added to GuestCartItem after this key shipped, so a cart
+      // persisted by an older build has no value for it. Normalize on read
+      // rather than letting `undefined` reach clampQuantity.
+      const normalized: Record<string, GuestCartItem> = {};
+      for (const [id, item] of Object.entries(action.payload ?? {})) {
+        if (!item || typeof item.productId !== "string") continue;
+        normalized[id] = { ...item, minQty: item.minQty ?? 1, maxQty: item.maxQty ?? 99 };
+      }
+      state.items = normalized;
       state.hydrated = true;
     },
     setItemQuantity(state, action: PayloadAction<GuestCartItem>) {

@@ -1,6 +1,8 @@
 "use client";
 
+import { MapPin, Pencil, Trash2 } from "lucide-react";
 import type { Address } from "@/lib/store/addressesApi";
+import { Badge } from "@/components/ui/Badge";
 
 export function AddressCard({
   address,
@@ -16,48 +18,51 @@ export function AddressCard({
   busy?: boolean;
 }) {
   return (
-    <div className="organic-shadow bg-surface-container-lowest rounded-organic p-stack-lg border border-outline-variant/30 relative flex flex-col gap-stack-sm">
-      <div className="absolute top-4 left-4 flex gap-2">
-        <button
-          type="button"
-          onClick={onDelete}
-          disabled={busy}
-          className="p-2 hover:bg-error-container/20 rounded-full text-error transition-colors disabled:opacity-50"
-          aria-label="حذف العنوان"
-        >
-          <span className="material-symbols-outlined">delete</span>
-        </button>
+    <div className="relative flex flex-col gap-stack-sm rounded-organic border border-outline-variant bg-surface p-6">
+      {/* end-4, not left-4 — keeps the actions on the outer corner when mirrored. */}
+      <div className="absolute top-4 end-4 flex gap-1">
         <button
           type="button"
           onClick={onEdit}
           disabled={busy}
-          className="p-2 hover:bg-primary-container/20 rounded-full text-primary transition-colors disabled:opacity-50"
+          className="rounded-md p-1.5 text-on-surface-variant transition-colors duration-fast hover:bg-surface-container hover:text-primary disabled:opacity-45"
           aria-label="تعديل العنوان"
         >
-          <span className="material-symbols-outlined">edit</span>
+          <Pencil className="size-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={busy}
+          className="rounded-md p-1.5 text-on-surface-variant transition-colors duration-fast hover:bg-error-container hover:text-on-error-container disabled:opacity-45"
+          aria-label="حذف العنوان"
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
         </button>
       </div>
-      <div className="bg-primary-fixed w-12 h-12 rounded-xl flex items-center justify-center text-primary">
-        <span className="material-symbols-outlined">location_on</span>
+
+      <div className="flex size-11 items-center justify-center rounded-xl bg-primary-container text-on-primary-container">
+        <MapPin className="size-5" aria-hidden="true" />
       </div>
-      <h4 className="font-headline-md text-headline-md font-bold text-on-surface">
-        {address.label}
-      </h4>
-      <p className="text-on-surface-variant font-body-md leading-relaxed">
+
+      <h4 className="text-h3 text-on-surface">{address.label}</h4>
+
+      <p className="text-small leading-relaxed text-on-surface-variant">
         {address.cityName}، {address.district}
         <br />
         {address.streetDetails}
       </p>
+
       {address.isDefault ? (
-        <span className="self-start bg-primary/10 text-primary px-3 py-1 rounded-full text-label-sm font-bold">
+        <Badge tone="brand" className="self-start">
           العنوان الافتراضي
-        </span>
+        </Badge>
       ) : (
         <button
           type="button"
           onClick={onSetDefault}
           disabled={busy}
-          className="self-start text-primary font-label-sm hover:underline disabled:opacity-50"
+          className="self-start text-caption font-semibold text-primary transition-colors duration-fast hover:underline disabled:opacity-45"
         >
           تعيين كعنوان افتراضي
         </button>

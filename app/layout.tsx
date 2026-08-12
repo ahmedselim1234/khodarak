@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { StoreProvider } from "@/components/providers/StoreProvider";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-  variable: "--font-plus-jakarta-sans",
+// The app's copy is entirely Arabic. The previous font (Plus Jakarta Sans,
+// subsets: ["latin"]) carried no Arabic glyphs at all, so every character on
+// every page fell back to the OS default face. IBM Plex Sans Arabic covers
+// both scripts, so this is also one font download instead of two.
+const arabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-arabic",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -19,18 +24,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${plusJakartaSans.variable} h-full`}>
-      <head>
-        {/* eslint-disable-next-line @next/next/no-page-custom-font --
-            Material Symbols Outlined isn't in next/font/google's catalog,
-            so it can't be self-hosted via next/font; this loads once, in the
-            root layout (not a per-page file), for every route. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-full bg-background text-on-background font-body-md text-body-md antialiased">
+    <html lang="ar" dir="rtl" className={`${arabic.variable} h-full`}>
+      <body className="min-h-full bg-background text-on-background text-body-md antialiased">
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>

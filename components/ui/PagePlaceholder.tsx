@@ -8,22 +8,22 @@ export function PagePlaceholder({
   description,
   children,
 }: {
-  icon: string;
+  icon?: ReactNode;
   title: string;
   description: string;
   children?: ReactNode;
 }) {
   return (
     <Container>
-      <div className="py-stack-lg">
-        <Card className="flex flex-col items-start gap-stack-md text-right">
-          <span className="material-symbols-outlined text-primary text-5xl" aria-hidden>
-            {icon}
-          </span>
-          <h1 className="font-headline-md text-headline-md text-on-background font-bold">
-            {title}
-          </h1>
-          <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+      <div className="py-stack-xl">
+        <Card padding="lg" className="flex flex-col items-start gap-stack-md">
+          {icon && (
+            <div className="flex size-12 items-center justify-center rounded-xl bg-primary-container text-on-primary-container">
+              {icon}
+            </div>
+          )}
+          <h1 className="text-h1 text-on-surface">{title}</h1>
+          <p className="max-w-2xl text-body-lg text-on-surface-variant">
             {description}
           </p>
           {children}

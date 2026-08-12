@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { XCircle } from "lucide-react";
 import type { SubscriptionDetail } from "@/lib/store/dashboardApi";
 import { SubscriptionHealthBadge } from "./SubscriptionHealthBadge";
 
@@ -28,10 +29,10 @@ export function SubscriptionStatusCard({
   if (subscription.status === "cancelled") {
     return (
       <div className="bg-surface rounded-[20px] p-stack-lg shadow-sm border border-outline-variant/30 text-center flex flex-col gap-stack-sm items-center">
-        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">
-          cancel
-        </span>
-        <p className="font-headline-md text-headline-md font-bold">الاشتراك ملغى</p>
+        <div className="flex size-14 items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant">
+          <XCircle className="size-6" aria-hidden="true" />
+        </div>
+        <p className="text-h3 text-on-surface">الاشتراك ملغى</p>
         <p className="font-body-md text-body-md text-on-surface-variant">
           لا يمكن إعادة تفعيل هذا الاشتراك — يمكنك بدء اشتراك جديد في أي وقت.
         </p>

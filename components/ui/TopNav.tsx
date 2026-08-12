@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutDashboard, UserCircle2 } from "lucide-react";
 import { Container } from "./Container";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -17,50 +18,55 @@ export async function TopNav() {
   } = await supabase.auth.getUser();
 
   return (
-    <>
-      <header className="sticky top-0 w-full bg-surface/95 backdrop-blur-md shadow-sm z-50">
-        <Container>
-          <nav className="flex flex-row-reverse justify-between items-center h-20">
-            <Link href="/" className="font-display-lg text-display-lg font-bold text-primary">
-              خضارك
-            </Link>
-            <div className="hidden md:flex flex-row-reverse items-center gap-stack-lg font-body-md text-body-md">
-              {links.map((link) => (
+    <header className="sticky top-0 z-50 w-full border-b border-outline-variant glass-effect">
+      <Container>
+        {/* No flex-row-reverse: <html dir="rtl"> already lays flex rows out
+            right-to-left, so reversing them flipped the nav back to LTR. */}
+        <nav className="flex h-16 items-center justify-between gap-stack-md">
+          <Link
+            href="/"
+            className="text-h2 font-bold text-primary transition-opacity duration-fast hover:opacity-80"
+          >
+            خضارك
+          </Link>
+
+          <div className="hidden items-center gap-stack-lg text-small md:flex">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-stack-sm">
+            <CartBar />
+            {user ? (
+              <>
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-on-surface-variant hover:text-primary transition-colors"
+                  href="/dashboard"
+                  className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
+                  aria-label="لوحة التحكم"
                 >
-                  {link.label}
+                  <LayoutDashboard className="size-5" aria-hidden="true" />
                 </Link>
-              ))}
-            </div>
-            <div className="flex flex-row-reverse items-center gap-stack-md">
-              {user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
-                    aria-label="لوحة التحكم"
-                  >
-                    space_dashboard
-                  </Link>
-                  <SignOutButton />
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  className="material-symbols-outlined text-primary p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95"
-                  aria-label="تسجيل الدخول"
-                >
-                  account_circle
-                </Link>
-              )}
-            </div>
-          </nav>
-        </Container>
-      </header>
-      <CartBar />
-    </>
+                <SignOutButton />
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
+                aria-label="تسجيل الدخول"
+              >
+                <UserCircle2 className="size-5" aria-hidden="true" />
+              </Link>
+            )}
+          </div>
+        </nav>
+      </Container>
+    </header>
   );
 }

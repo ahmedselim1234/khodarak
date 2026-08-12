@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SlidersHorizontal } from "lucide-react";
 
 // FR-007: price range + "available only" filter, scoped to the active
 // category tab. Applies on explicit submit (not per-keystroke), matching
@@ -27,10 +28,10 @@ export function FilterSidebar() {
 
   return (
     <aside className="w-full md:w-72 flex-shrink-0">
-      <div className="sticky top-24 bg-surface rounded-[20px] p-stack-md shadow-sm border border-outline-variant/30">
+      <div className="sticky top-20 rounded-organic border border-outline-variant bg-surface p-stack-md">
         <div className="flex items-center justify-between mb-stack-md">
-          <h2 className="font-headline-md text-headline-md text-primary">تصفية النتائج</h2>
-          <span className="material-symbols-outlined text-outline">tune</span>
+          <h2 className="text-h3 text-on-surface">تصفية النتائج</h2>
+          <SlidersHorizontal className="size-4 text-on-surface-variant" aria-hidden="true" />
         </div>
 
         <div className="mb-stack-lg">

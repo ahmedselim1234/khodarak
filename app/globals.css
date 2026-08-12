@@ -2,34 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Signature effects ported verbatim from design/home.html (inline <style>, lines 12-33).
- * See specs/001-phase-0-foundation/research.md — do not re-derive.
- */
-body {
-  font-family: "plusJakartaSans", var(--font-plus-jakarta-sans), sans-serif;
-  scroll-behavior: smooth;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Western digits for prices/IDs/dates, per design decision. */
+    font-variant-numeric: lining-nums;
+  }
+
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* A single visible focus treatment for the whole app. Previously each
+     control invented its own focus ring, and several had none. */
+  :focus-visible {
+    outline: 2px solid theme("colors.primary");
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: theme("colors.primary-container");
+    color: theme("colors.on-primary-container");
+  }
 }
 
-.material-symbols-outlined {
-  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-  vertical-align: middle;
+@layer components {
+  /* Kept so the ~20 existing `organic-shadow` usages keep working; the value
+     now matches the `shadow-md` token rather than being a one-off. */
+  .organic-shadow {
+    box-shadow:
+      0 4px 12px rgba(31, 93, 58, 0.07),
+      0 1px 3px rgba(26, 29, 26, 0.05);
+  }
+
+  /* This class was referenced by ProductCard.tsx and ProductGallery.tsx but was
+     never defined anywhere, so product cards rendered completely flat. */
+  .product-card-shadow {
+    box-shadow:
+      0 1px 3px rgba(26, 29, 26, 0.06),
+      0 1px 2px rgba(26, 29, 26, 0.04);
+    transition: box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .product-card-shadow:hover {
+    box-shadow:
+      0 12px 28px rgba(31, 93, 58, 0.09),
+      0 4px 8px rgba(26, 29, 26, 0.04);
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  /* Aligns digits in tables and price columns so they don't jitter. */
+  .tabular {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
 }
 
-.organic-shadow {
-  box-shadow: 0px 4px 20px rgba(27, 94, 32, 0.05);
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-.glass-effect {
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

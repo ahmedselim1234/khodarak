@@ -1,38 +1,38 @@
 import Link from "next/link";
+import { LayoutDashboard, Package2, Settings, type LucideIcon } from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "لوحة التحكم", icon: "dashboard" },
-  { href: "/dashboard/orders", label: "طلباتي", icon: "package_2" },
-  { href: "/dashboard/settings", label: "الإعدادات", icon: "settings" },
-] as const;
+const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "لوحة التحكم", Icon: LayoutDashboard },
+  { href: "/dashboard/orders", label: "طلباتي", Icon: Package2 },
+  { href: "/dashboard/settings", label: "الإعدادات", Icon: Settings },
+];
 
-// Server Component — design/dashboard.html's side nav (لوحة التحكم / طلباتي /
-// الإعدادات), matching plan.md §0.B's actual resolved route table (the
-// mockup's separate "اشتراكاتي"/"العناوين" entries both fold into these
-// three real routes — subscription management lives on /dashboard itself,
-// address management lives on /dashboard/settings). Shared by all three
-// dashboard pages via app/dashboard/layout.tsx. `activePath` is passed by
-// each page rather than introspected — a plain Server Component has no
-// built-in access to the current pathname (that's a Client Component-only
-// hook), and every dashboard page already knows its own route.
+// Server Component — the dashboard side nav (لوحة التحكم / طلباتي / الإعدادات).
+// Shared by all three dashboard pages via app/dashboard/layout.tsx.
+// `activePath` is passed by each page rather than introspected — a plain
+// Server Component has no access to the current pathname, and every dashboard
+// page already knows its own route.
 export function SideNav({ activePath }: { activePath: string }) {
   return (
-    <aside className="hidden lg:flex flex-col h-[calc(100vh-80px)] w-72 sticky top-20 bg-surface-container-low p-stack-md border-l border-outline-variant">
-      <nav className="flex flex-col gap-stack-sm">
-        {NAV_ITEMS.map((item) => {
-          const active = activePath === item.href;
+    // border-e, not border-l: the sidebar sits at the inline start (right in
+    // RTL), so its dividing edge is the inline end.
+    <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-64 shrink-0 flex-col border-e border-outline-variant bg-surface-container-low p-stack-sm lg:flex">
+      <nav className="flex flex-col gap-1">
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const active = activePath === href;
           return (
             <Link
-              key={item.href}
-              href={item.href}
-              className={
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-small transition-colors duration-fast ${
                 active
-                  ? "bg-secondary-container text-on-secondary-container rounded-xl font-bold flex flex-row-reverse items-center gap-stack-md px-4 py-3 transition-all"
-                  : "text-on-surface-variant flex flex-row-reverse items-center gap-stack-md px-4 py-3 hover:bg-surface-container-high transition-all rounded-xl"
-              }
+                  ? "bg-primary-container font-semibold text-on-primary-container"
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              }`}
             >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-body-md text-body-md">{item.label}</span>
+              <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+              <span>{label}</span>
             </Link>
           );
         })}

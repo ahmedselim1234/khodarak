@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MapPinPlus } from "lucide-react";
 import {
   useListAddressesQuery,
   useDeleteAddressMutation,
@@ -59,12 +60,12 @@ export function AddressBook({ cities }: { cities: { id: string; nameAr: string }
         <button
           type="button"
           onClick={() => setFormState({ mode: "create" })}
-          className="border-2 border-dashed border-outline-variant rounded-organic p-stack-lg flex flex-col items-center justify-center gap-4 hover:bg-surface-container-high transition-all text-on-surface-variant group h-full min-h-[200px]"
+          className="group flex h-full min-h-[200px] flex-col items-center justify-center gap-3 rounded-organic border border-dashed border-outline-variant p-6 text-on-surface-variant transition-colors duration-fast hover:border-primary hover:bg-surface-container-low hover:text-primary"
         >
-          <div className="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined !text-4xl">add_location_alt</span>
+          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-high transition-colors duration-fast group-hover:bg-primary-container group-hover:text-on-primary-container">
+            <MapPinPlus className="size-5" aria-hidden="true" />
           </div>
-          <span className="font-bold text-headline-md">إضافة عنوان جديد</span>
+          <span className="text-small font-semibold">إضافة عنوان جديد</span>
         </button>
       )}
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function buildHref(searchParams: Record<string, string | undefined>, page: number) {
   const params = new URLSearchParams();
@@ -33,11 +34,11 @@ export function Pagination({
           className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface text-primary hover:bg-primary hover:text-on-primary transition-all border border-outline-variant"
           aria-label="الصفحة السابقة"
         >
-          <span className="material-symbols-outlined">chevron_right</span>
+          <ChevronRight className="size-4" aria-hidden="true" />
         </Link>
       ) : (
         <span className="w-10 h-10 flex items-center justify-center rounded-lg text-outline/40 border border-outline-variant/30">
-          <span className="material-symbols-outlined">chevron_right</span>
+          <ChevronRight className="size-4" aria-hidden="true" />
         </span>
       )}
 
@@ -61,11 +62,11 @@ export function Pagination({
           className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface text-primary hover:bg-primary hover:text-on-primary transition-all border border-outline-variant"
           aria-label="الصفحة التالية"
         >
-          <span className="material-symbols-outlined">chevron_left</span>
+          <ChevronLeft className="size-4" aria-hidden="true" />
         </Link>
       ) : (
         <span className="w-10 h-10 flex items-center justify-center rounded-lg text-outline/40 border border-outline-variant/30">
-          <span className="material-symbols-outlined">chevron_left</span>
+          <ChevronLeft className="size-4" aria-hidden="true" />
         </span>
       )}
     </div>

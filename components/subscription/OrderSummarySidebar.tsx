@@ -43,14 +43,21 @@ export function OrderSummarySidebar({
       )}
 
       {step === "build" ? (
-        <Button
-          type="button"
-          className="w-full"
-          disabled={!breakdown || ruleViolation || !canProceedToCheckout}
-          onClick={onProceedToCheckout}
-        >
-          متابعة لإتمام الطلب
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            className="w-full"
+            disabled={!breakdown || ruleViolation || !canProceedToCheckout}
+            onClick={onProceedToCheckout}
+          >
+            متابعة لإتمام الطلب
+          </Button>
+          {breakdown && !ruleViolation && !canProceedToCheckout && (
+            <p className="font-label-sm text-label-sm text-on-surface-variant text-center">
+              اختر تكرار التوصيل وتاريخ أول توصيلة للمتابعة
+            </p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col gap-stack-sm">
           <Button

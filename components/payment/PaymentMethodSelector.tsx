@@ -1,5 +1,7 @@
 "use client";
 
+import { CreditCard } from "lucide-react";
+
 export type SavedPaymentMethod = {
   id: string;
   brand: string;
@@ -42,7 +44,7 @@ export function PaymentMethodSelector({
             }
           >
             <span className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">credit_card</span>
+              <CreditCard className="size-5 text-primary" aria-hidden="true" />
               <span>
                 {method.brand} •••• {method.lastFour}
               </span>

@@ -1,38 +1,47 @@
 import Link from "next/link";
+import {
+  CalendarDays,
+  CreditCard,
+  LayoutDashboard,
+  MapPin,
+  Package2,
+  PackageSearch,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/admin", label: "لوحة التحكم", icon: "dashboard" },
-  { href: "/admin/products", label: "المنتجات", icon: "inventory_2" },
-  { href: "/admin/subscriptions", label: "الاشتراكات", icon: "calendar_today" },
-  { href: "/admin/orders", label: "الطلبات", icon: "package_2" },
-  { href: "/admin/payments", label: "المدفوعات", icon: "payments" },
-  { href: "/admin/cities", label: "المدن", icon: "location_on" },
-  { href: "/admin/settings", label: "الإعدادات", icon: "settings" },
-] as const;
+const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
+  { href: "/admin", label: "لوحة التحكم", Icon: LayoutDashboard },
+  { href: "/admin/products", label: "المنتجات", Icon: PackageSearch },
+  { href: "/admin/subscriptions", label: "الاشتراكات", Icon: CalendarDays },
+  { href: "/admin/orders", label: "الطلبات", Icon: Package2 },
+  { href: "/admin/payments", label: "المدفوعات", Icon: CreditCard },
+  { href: "/admin/cities", label: "المدن", Icon: MapPin },
+  { href: "/admin/settings", label: "الإعدادات", Icon: Settings },
+];
 
-// Server Component — /admin has never had a consistent side nav before this
-// phase (only individual product/settings screens with their own bare
-// TopNav shell). Mirrors components/dashboard/SideNav.tsx (Phase 6)'s exact
-// shape: `activePath` passed by each page rather than introspected, since a
-// Server Component has no built-in access to the current pathname.
+// Server Component — mirrors components/dashboard/SideNav.tsx exactly:
+// `activePath` is passed by each page rather than introspected, since a Server
+// Component has no built-in access to the current pathname.
 export function AdminSideNav({ activePath }: { activePath: string }) {
   return (
-    <aside className="hidden lg:flex flex-col h-[calc(100vh-80px)] w-72 sticky top-20 bg-surface-container-low p-stack-md border-l border-outline-variant">
-      <nav className="flex flex-col gap-stack-sm">
-        {NAV_ITEMS.map((item) => {
-          const active = activePath === item.href;
+    <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-64 shrink-0 flex-col border-e border-outline-variant bg-surface-container-low p-stack-sm lg:flex">
+      <nav className="flex flex-col gap-1">
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const active = activePath === href;
           return (
             <Link
-              key={item.href}
-              href={item.href}
-              className={
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-small transition-colors duration-fast ${
                 active
-                  ? "bg-secondary-container text-on-secondary-container rounded-xl font-bold flex flex-row-reverse items-center gap-stack-md px-4 py-3 transition-all"
-                  : "text-on-surface-variant flex flex-row-reverse items-center gap-stack-md px-4 py-3 hover:bg-surface-container-high transition-all rounded-xl"
-              }
+                  ? "bg-primary-container font-semibold text-on-primary-container"
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              }`}
             >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-body-md text-body-md">{item.label}</span>
+              <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+              <span>{label}</span>
             </Link>
           );
         })}

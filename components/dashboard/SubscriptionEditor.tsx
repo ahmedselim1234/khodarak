@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { MappedProduct } from "@/lib/products/mapProductRow";
 import type { Frequencies, FrequencyKey } from "@/lib/pricing/mapSettingsRow";
 import type { SubscriptionItem } from "@/lib/store/dashboardApi";
@@ -173,7 +174,7 @@ export function SubscriptionEditor({
                     aria-label="إزالة"
                     className="text-error ms-2"
                   >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    <Trash2 className="size-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>

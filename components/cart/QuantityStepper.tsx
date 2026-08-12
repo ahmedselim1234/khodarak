@@ -1,6 +1,7 @@
 "use client";
 
 import { useDispatch, useSelector } from "react-redux";
+import { Minus, Plus } from "lucide-react";
 import { useAuthUserId } from "@/lib/supabase/useAuthUser";
 import { useGetCartQuery, useUpsertCartItemMutation } from "@/lib/store/cartApi";
 import { setItemQuantity } from "@/lib/cart/cartSlice";
@@ -74,9 +75,9 @@ export function QuantityStepper({ product }: { product: StepperProduct }) {
         onClick={() => applyQuantity(product.minQty)}
         disabled={upserting}
         aria-label="أضف للصندوق"
-        className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center hover:bg-primary-container active:scale-90 transition-all shadow-md disabled:opacity-50"
+        className="flex size-9 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm transition-[background-color,box-shadow] duration-fast hover:bg-primary-container hover:text-on-primary-container hover:shadow-md disabled:opacity-45"
       >
-        <span className="material-symbols-outlined">add</span>
+        <Plus className="size-4" aria-hidden="true" />
       </button>
     );
   }
@@ -88,19 +89,19 @@ export function QuantityStepper({ product }: { product: StepperProduct }) {
         onClick={() => applyQuantity(quantity - 1)}
         disabled={upserting}
         aria-label="إنقاص الكمية"
-        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high active:scale-90 transition-all disabled:opacity-50"
+        className="flex size-7 items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high disabled:opacity-45"
       >
-        <span className="material-symbols-outlined text-primary text-[20px]">remove</span>
+        <Minus className="size-4" aria-hidden="true" />
       </button>
-      <span className="w-6 text-center font-bold">{quantity}</span>
+      <span className="w-6 text-center text-small font-bold tabular">{quantity}</span>
       <button
         type="button"
         onClick={() => applyQuantity(quantity + 1)}
         disabled={upserting || !product.isAvailable}
         aria-label="زيادة الكمية"
-        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high active:scale-90 transition-all disabled:opacity-50"
+        className="flex size-7 items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high disabled:opacity-45"
       >
-        <span className="material-symbols-outlined text-primary text-[20px]">add</span>
+        <Plus className="size-4" aria-hidden="true" />
       </button>
     </div>
   );

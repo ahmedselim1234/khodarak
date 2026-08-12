@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ShoppingBasket } from "lucide-react";
 import { useGetSubscriptionQuery, useResumeSubscriptionMutation } from "@/lib/store/dashboardApi";
 import type { MappedProduct } from "@/lib/products/mapProductRow";
 import type { Frequencies } from "@/lib/pricing/mapSettingsRow";
@@ -40,10 +41,10 @@ export function SubscriptionDashboard({
   if (!subscriptionId) {
     return (
       <div className="bg-surface rounded-[20px] p-stack-lg shadow-sm border border-outline-variant/30 text-center flex flex-col gap-stack-sm items-center">
-        <span className="material-symbols-outlined text-[40px] text-primary">
-          shopping_basket
-        </span>
-        <p className="font-headline-md text-headline-md font-bold">لا يوجد اشتراك بعد</p>
+        <div className="flex size-14 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+          <ShoppingBasket className="size-6" aria-hidden="true" />
+        </div>
+        <p className="text-h3 text-on-surface">لا يوجد اشتراك بعد</p>
         <p className="font-body-md text-body-md text-on-surface-variant">
           ابدأ اشتراكك الأول واستمتع بتوصيل الخضار والفواكه الطازجة بانتظام.
         </p>

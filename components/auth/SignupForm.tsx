@@ -52,10 +52,17 @@ export function SignupForm() {
       const alreadyRegistered = /already registered|already exists|user already/i.test(
         error.message
       );
+      // Supabase's built-in (non-custom-SMTP) email sender caps at a handful
+      // of emails/hour project-wide — easy to hit while testing signup
+      // repeatedly. error.code is stable across locales/message wording;
+      // error.message is raw English and shouldn't reach the user.
+      const rateLimited = error.code === "over_email_send_rate_limit";
       setFormError(
         alreadyRegistered
           ? "هذا البريد الإلكتروني مسجل بالفعل — جرّب تسجيل الدخول بدلاً من ذلك."
-          : error.message
+          : rateLimited
+            ? "الخادم مشغول بإرسال رسائل التأكيد حالياً — الرجاء المحاولة بعد قليل."
+            : error.message
       );
       return;
     }

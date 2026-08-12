@@ -19,7 +19,7 @@ export default async function AdminSubscriptionDetailPage({
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select(
-      "id, status, frequency, next_delivery_date, paused_until, address_id, price_breakdown, user_id, renewal_attempt_count, next_renewal_attempt_date"
+      "id, status, frequency, delivery_interval_days, next_delivery_date, paused_until, address_id, price_breakdown, user_id, renewal_attempt_count, next_renewal_attempt_date"
     )
     .eq("id", id)
     .maybeSingle();
@@ -72,6 +72,7 @@ export default async function AdminSubscriptionDetailPage({
             id: subscription.id,
             status: subscription.status,
             frequency: subscription.frequency,
+            deliveryIntervalDays: subscription.delivery_interval_days,
             nextDeliveryDate: subscription.next_delivery_date,
             pausedUntil: subscription.paused_until,
             customerName: profile?.full_name ?? "—",

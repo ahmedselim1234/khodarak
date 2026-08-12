@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { pricingPreviewRequestSchema } from "@/lib/validation/pricingPreview";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate, type CalculateInput } from "@/lib/pricing/calculate";
 import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
-
-const SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
+import { FULL_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 // POST /api/pricing/preview — per contracts/pricing-preview-api.md. No
 // authentication required (FR-017a) — this is the one Route Handler in the
@@ -20,18 +19,14 @@ export async function POST(request: Request) {
   const result = pricingPreviewRequestSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { items, frequency, deliveryIntervalId, cityId } = result.data;
 
   const { data: settingsRow, error: settingsError } = await supabase
     .from("settings")
-    .select(SETTINGS_SELECT)
+    .select(FULL_SETTINGS_SELECT)
     .eq("id", 1)
     .single();
 

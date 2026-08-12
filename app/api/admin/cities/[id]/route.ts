@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { cityUpdateSchema } from "@/lib/validation/city";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // PATCH /api/admin/cities/[id] — per contracts/admin-payments-and-cities-api.md.
 // Deactivating takes effect immediately for the customer-facing address
@@ -18,11 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = cityUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { nameAr, isActive, deliveryFeeOverride } = result.data;

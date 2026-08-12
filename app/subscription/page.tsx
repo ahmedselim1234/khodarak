@@ -4,12 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { SubscriptionWizard } from "@/components/subscription/SubscriptionWizard";
+import { FULL_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 const PRODUCT_SELECT =
   "id, name_ar, category, price, unit, image_url, is_available, min_qty, max_qty, sort_order, created_at";
-const SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
-
 // /subscription — replaces the Phase 0 placeholder. Server Component:
 // fetches available products, settings.frequencies/order-rules, and a
 // default city for the build step's live preview (research.md §4); renders
@@ -25,7 +23,7 @@ export default async function SubscriptionPage() {
   const [{ data: products }, { data: settingsRow }, { data: defaultAddress }, { data: firstCity }] =
     await Promise.all([
       supabase.from("products").select(PRODUCT_SELECT).eq("is_available", true).order("sort_order"),
-      supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single(),
+      supabase.from("settings").select(FULL_SETTINGS_SELECT).eq("id", 1).single(),
       user
         ? supabase
             .from("addresses")

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { profileUpdateSchema } from "@/lib/validation/profileUpdate";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // PATCH /api/profile — per contracts/settings-api.md (FR-023). Uses the
 // existing owner-scoped RLS client (profiles_update_own, Phase 1) — no
@@ -20,11 +21,7 @@ export async function PATCH(request: Request) {
   const result = profileUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { error } = await supabase

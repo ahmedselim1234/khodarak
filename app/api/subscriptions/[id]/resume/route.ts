@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resumeSubscription } from "@/lib/subscription/mutateSubscription";
 import { selectableDeliveryDates } from "@/lib/subscription/selectableDeliveryDates";
-
-const SETTINGS_SELECT = "first_delivery_lead_days, blackout_weekdays";
+import { RESUME_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 // POST /api/subscriptions/[id]/resume — per contracts/pause-resume-cancel-api.md.
 // Early resume (FR-012): recalculates next_delivery_date from now, not from
@@ -36,7 +35,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   const { data: settingsRow } = await supabase
     .from("settings")
-    .select(SETTINGS_SELECT)
+    .select(RESUME_SETTINGS_SELECT)
     .eq("id", 1)
     .single();
 

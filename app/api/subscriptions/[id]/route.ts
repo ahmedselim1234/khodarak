@@ -9,20 +9,17 @@ import { resolveEffectiveConfig } from "@/lib/subscription/resolveEffectiveConfi
 import { subscriptionHealth } from "@/lib/subscription/subscriptionHealth";
 import { consecutiveFailedPayments } from "@/lib/subscription/consecutiveFailedPayments";
 import { subscriptionEditSchema } from "@/lib/validation/subscriptionEdit";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate } from "@/lib/pricing/calculate";
 import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 import { selectableDeliveryDates } from "@/lib/subscription/selectableDeliveryDates";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
 import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
-
-const FULL_SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
+import { FULL_SETTINGS_SELECT, EDIT_CUTOFF_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 const SUBSCRIPTION_SELECT =
   "id, user_id, status, frequency, address_id, next_delivery_date, paused_until, price_breakdown, pending_frequency, pending_address_id, pending_price_breakdown, pending_effective_from, delivery_interval_id, delivery_interval_days, delivery_interval_last_discount_percent, pending_delivery_interval_id, pending_delivery_interval_days";
-
-const SETTINGS_SELECT = "edit_cutoff_hours";
 
 // GET /api/subscriptions/[id] — per
 // specs/007-phase-6-customer-dashboard/contracts/subscription-detail-and-edit-api.md.
@@ -71,7 +68,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         .from("subscription_pending_items")
         .select("product_id, quantity, products(name_ar, price)")
         .eq("subscription_id", subscription.id),
-      supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single(),
+      supabase.from("settings").select(EDIT_CUTOFF_SETTINGS_SELECT).eq("id", 1).single(),
       supabase
         .from("payments")
         .select("status")
@@ -191,11 +188,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = subscriptionEditSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { items, frequency, deliveryIntervalId, addressId } = result.data;

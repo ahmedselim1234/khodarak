@@ -5,9 +5,7 @@ import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate, type PriceBreakdown } from "@/lib/pricing/calculate";
 import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
-
-const SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
+import { FULL_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 export type RepriceResult =
   | {
@@ -95,7 +93,7 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
     .eq("id", effective.locked.addressId)
     .maybeSingle();
 
-  const { data: settingsRow } = await supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single();
+  const { data: settingsRow } = await supabase.from("settings").select(FULL_SETTINGS_SELECT).eq("id", 1).single();
 
   if (!settingsRow || !address) {
     return { ok: false, reason: "no_available_items" };

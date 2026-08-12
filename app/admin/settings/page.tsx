@@ -4,16 +4,14 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { createClient } from "@/lib/supabase/server";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { SettingsForm } from "@/components/admin/settings/SettingsForm";
-
-const SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
+import { FULL_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 // /admin/settings — no mockup exists (spec.md Assumptions), same treatment
 // as /admin/products from Phase 2: shared design tokens + standard admin
 // form conventions.
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
-  const { data } = await supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single();
+  const { data } = await supabase.from("settings").select(FULL_SETTINGS_SELECT).eq("id", 1).single();
 
   // The settings row is seeded by migration and never deleted (data-model.md
   // Lifecycle) — a missing row here means the migration hasn't run.

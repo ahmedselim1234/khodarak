@@ -74,6 +74,17 @@
   }
 }
 
+/* Phase 11 (research.md §4.2): opts every same-origin navigation into the
+   browser-native View Transitions API — a subtle cross-fade between pages
+   instead of an abrupt swap. Pure CSS, no JS wrapper, no new dependency;
+   browsers without support simply navigate as before (progressive
+   enhancement). Already governed by the prefers-reduced-motion rule below,
+   which the browser applies to the transition's own generated pseudo-
+   elements same as any other animation. */
+@view-transition {
+  navigation: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

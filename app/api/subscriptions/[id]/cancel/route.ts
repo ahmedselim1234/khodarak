@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { cancelSubscription } from "@/lib/subscription/mutateSubscription";
 import { subscriptionCancelSchema } from "@/lib/validation/subscriptionPause";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // POST /api/subscriptions/[id]/cancel — per contracts/pause-resume-cancel-api.md.
 // Immediate — bypasses the edit cutoff lock, terminal (FR-014).
@@ -20,11 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const result = subscriptionCancelSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: subscription } = await supabase

@@ -3,12 +3,33 @@ import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { productCreateSchema } from "@/lib/validation/product";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 
 const PRODUCT_SELECT =
   "id, name_ar, category, price, unit, image_url, is_available, min_qty, max_qty, sort_order, created_at";
 
 const IMAGE_URL_MARKER = "/product-images/";
+
+// GET /api/admin/products — backs productsAdminApi's listProducts query, the
+// cache that createProduct/updateProduct/deleteProduct optimistically patch.
+export async function GET() {
+  const supabase = await createClient();
+  const { error: authError } = await requireAdmin(supabase);
+  if (authError) return authError;
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+
+  return NextResponse.json({ products: (data ?? []).map(mapProductRow) });
+}
 
 // POST /api/admin/products — per contracts/products-admin-api.md. Not under
 // the /admin path prefix, so middleware.ts's route-protection matrix does
@@ -23,11 +44,7 @@ export async function POST(request: Request) {
   const result = productCreateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   // Never trust a client-supplied URL blindly, even post-upload (research.md
@@ -49,6 +66,7 @@ export async function POST(request: Request) {
       image_url: result.data.imageUrl,
       min_qty: result.data.minQty,
       max_qty: result.data.maxQty,
+      ...(result.data.sortOrder !== undefined && { sort_order: result.data.sortOrder }),
     })
     .select(PRODUCT_SELECT)
     .single();

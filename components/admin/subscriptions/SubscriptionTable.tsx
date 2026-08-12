@@ -1,17 +1,12 @@
 import Link from "next/link";
 import type { AdminSubscriptionRow } from "@/lib/admin/queryAdminSubscriptions";
+import { formatDeliveryCadenceLabel } from "@/lib/pricing/deliveryInterval";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "بانتظار الدفع",
   active: "نشط",
   paused: "متوقف مؤقتاً",
   cancelled: "ملغي",
-};
-
-const FREQUENCY_LABELS: Record<string, string> = {
-  weekly: "أسبوعي",
-  biweekly: "كل أسبوعين",
-  monthly: "شهري",
 };
 
 export function SubscriptionTable({ subscriptions }: { subscriptions: AdminSubscriptionRow[] }) {
@@ -46,7 +41,9 @@ export function SubscriptionTable({ subscriptions }: { subscriptions: AdminSubsc
                 </Link>
               </td>
               <td className="py-3 px-2 font-body-md text-body-md">
-                {FREQUENCY_LABELS[subscription.frequency] ?? subscription.frequency}
+                {formatDeliveryCadenceLabel(subscription.frequency, {
+                  days: subscription.deliveryIntervalDays ?? 0,
+                })}
               </td>
               <td className="py-3 px-2 font-body-md text-body-md">
                 {subscription.nextDeliveryDate}

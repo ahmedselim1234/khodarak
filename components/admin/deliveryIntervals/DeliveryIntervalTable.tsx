@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { AdminDeliveryInterval } from "@/lib/store/adminDeliveryIntervalsApi";
+import { useOptimisticRows } from "@/lib/admin/useOptimisticRows";
+import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 import { Table, THead, TBody, TRow, TH, TD } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -12,32 +14,13 @@ type FormState =
   | { mode: "create" }
   | { mode: "edit"; interval: AdminDeliveryInterval };
 
-function estimateDeliveriesPerMonth(days: number): number {
-  return Math.round((30 / days) * 100) / 100;
-}
-
 // "use client" — list + inline add/edit (US1). Inactive rows stay visible
 // (muted, not hidden) so an admin can see what's been deactivated and why a
 // day count is currently unavailable to reuse (data-model.md).
 export function DeliveryIntervalTable({ intervals }: { intervals: AdminDeliveryInterval[] }) {
   const [formState, setFormState] = useState<FormState>({ mode: "closed" });
-  const [pending, setPending] = useState<Record<string, AdminDeliveryInterval>>({});
-
-  const rows = useMemo(() => {
-    const merged = intervals.map((interval) => pending[interval.id] ?? interval);
-    const created = Object.values(pending).filter(
-      (interval) => !intervals.some((existing) => existing.id === interval.id)
-    );
-    return [...merged, ...created].sort((a, b) => a.days - b.days);
-  }, [intervals, pending]);
-
-  function revert(id: string) {
-    setPending((current) => {
-      const next = { ...current };
-      delete next[id];
-      return next;
-    });
-  }
+  const { rows: mergedRows, setOptimistic, revert } = useOptimisticRows(intervals);
+  const rows = [...mergedRows].sort((a, b) => a.days - b.days);
 
   return (
     <div className="flex flex-col gap-stack-md">
@@ -72,6 +55,7 @@ export function DeliveryIntervalTable({ intervals }: { intervals: AdminDeliveryI
                 <button
                   type="button"
                   onClick={() => setFormState({ mode: "edit", interval })}
+                  aria-label={`تعديل فاصل كل ${interval.days} يوم`}
                   className="text-caption font-semibold text-primary transition-opacity duration-fast hover:underline"
                 >
                   تعديل
@@ -93,7 +77,7 @@ export function DeliveryIntervalTable({ intervals }: { intervals: AdminDeliveryI
       ) : (
         <DeliveryIntervalForm
           existingInterval={formState.mode === "edit" ? formState.interval : undefined}
-          onOptimistic={(interval) => setPending((current) => ({ ...current, [interval.id]: interval }))}
+          onOptimistic={setOptimistic}
           onRevert={revert}
           onSuccess={() => setFormState({ mode: "closed" })}
           onCancel={() => setFormState({ mode: "closed" })}

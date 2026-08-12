@@ -18,6 +18,7 @@ export const productCreateSchema = z
     imageUrl: z.string().min(1, "الصورة مطلوبة"),
     minQty: z.number().int().min(1, "الحد الأدنى للكمية يجب أن يكون 1 على الأقل"),
     maxQty: z.number().int().min(1, "الحد الأقصى للكمية يجب أن يكون 1 على الأقل"),
+    sortOrder: z.number().int().min(0, "ترتيب العرض يجب أن يكون 0 أو أكبر").optional(),
   })
   .refine((value) => value.maxQty >= value.minQty, {
     message: "الحد الأقصى يجب أن يكون أكبر من أو يساوي الحد الأدنى",
@@ -36,6 +37,7 @@ export const productUpdateSchema = z
     isAvailable: z.boolean().optional(),
     minQty: z.number().int().min(1).optional(),
     maxQty: z.number().int().min(1).optional(),
+    sortOrder: z.number().int().min(0).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "لا يوجد ما يتم تحديثه",

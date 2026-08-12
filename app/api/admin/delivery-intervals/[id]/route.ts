@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { deliveryIntervalUpdateSchema } from "@/lib/validation/deliveryInterval";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // PATCH /api/admin/delivery-intervals/[id] — per
 // contracts/delivery-intervals-admin-api.md. `days` is never accepted here
@@ -18,11 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = deliveryIntervalUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { discountPercent, isActive } = result.data;

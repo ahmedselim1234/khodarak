@@ -36,6 +36,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl ?? null);
   const [minQty, setMinQty] = useState(product ? String(product.minQty) : "1");
   const [maxQty, setMaxQty] = useState(product ? String(product.maxQty) : "10");
+  const [sortOrder, setSortOrder] = useState(product ? String(product.sortOrder) : "0");
   const [isAvailable, setIsAvailable] = useState(product?.isAvailable ?? true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
       imageUrl,
       minQty: Number(minQty),
       maxQty: Number(maxQty),
+      sortOrder: Number(sortOrder),
     };
 
     const result = productCreateSchema.safeParse(payload);
@@ -83,7 +85,6 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         await createProduct(result.data).unwrap();
       }
       router.push("/admin/products");
-      router.refresh();
     } catch {
       setFormError("تعذر حفظ المنتج — الرجاء المحاولة مرة أخرى");
     }
@@ -160,6 +161,15 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           error={fieldErrors.maxQty}
         />
       </div>
+
+      <FormField
+        label="ترتيب العرض"
+        type="number"
+        min="0"
+        value={sortOrder}
+        onChange={(e) => setSortOrder(e.target.value)}
+        error={fieldErrors.sortOrder}
+      />
 
       <ImageUploadField imageUrl={imageUrl} onChange={setImageUrl} />
       {fieldErrors.imageUrl && (

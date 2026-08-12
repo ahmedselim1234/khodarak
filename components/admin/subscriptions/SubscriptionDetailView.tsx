@@ -1,5 +1,6 @@
 import { PriceBreakdownCard } from "@/components/pricing/PriceBreakdownCard";
 import { SubscriptionAdminActions } from "./SubscriptionAdminActions";
+import { formatDeliveryCadenceLabel } from "@/lib/pricing/deliveryInterval";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -9,16 +10,11 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "ملغي",
 };
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  weekly: "أسبوعي",
-  biweekly: "كل أسبوعين",
-  monthly: "شهري",
-};
-
 export type AdminSubscriptionDetail = {
   id: string;
   status: string;
   frequency: string;
+  deliveryIntervalDays: number | null;
   nextDeliveryDate: string;
   pausedUntil: string | null;
   customerName: string;
@@ -85,7 +81,9 @@ export function SubscriptionDetailView({ subscription }: { subscription: AdminSu
           <div>
             <p className="font-label-sm text-label-sm text-on-surface-variant">التردد</p>
             <p className="font-bold">
-              {FREQUENCY_LABELS[subscription.frequency] ?? subscription.frequency}
+              {formatDeliveryCadenceLabel(subscription.frequency, {
+                days: subscription.deliveryIntervalDays ?? 0,
+              })}
             </p>
           </div>
           <div>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { queryAdminPaginated } from "@/lib/admin/queryAdminPaginated";
 
 export const PAGE_SIZE = 20;
 
@@ -50,33 +51,45 @@ export type AdminPaymentRow = {
   kind: string;
 };
 
+type PaymentRow = {
+  id: string;
+  created_at: string;
+  amount_halalas: number | null;
+  status: string;
+  failure_reason: string | null;
+  attempt_number: number;
+  kind: string;
+  profiles: { full_name: string; email: string; phone: string } | { full_name: string; email: string; phone: string }[] | null;
+};
+
 export async function queryAdminPayments(
   query: AdminPaymentsQuery
 ): Promise<{ payments: AdminPaymentRow[]; totalCount: number }> {
   const supabase = await createClient();
 
-  let request = supabase
-    .from("payments")
-    .select(
+  const { data, totalCount } = await queryAdminPaginated<PaymentRow>({
+    supabase,
+    table: "payments",
+    select:
       "id, created_at, amount_halalas, status, failure_reason, attempt_number, kind, profiles(full_name, email, phone)",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false });
+    page: query.page,
+    pageSize: PAGE_SIZE,
+    orderBy: [{ column: "created_at", ascending: false }],
+    filters: [
+      ...(query.status ? [{ column: "status", value: query.status }] : []),
+      ...(query.dateFrom
+        ? [{ column: "created_at", operator: "gte" as const, value: query.dateFrom }]
+        : []),
+      ...(query.dateTo
+        ? [{ column: "created_at", operator: "lte" as const, value: `${query.dateTo}T23:59:59` }]
+        : []),
+    ],
+    search: query.search,
+    searchColumns: ["full_name", "email", "phone"],
+    searchReferencedTable: "profiles",
+  });
 
-  if (query.status) request = request.eq("status", query.status);
-  if (query.dateFrom) request = request.gte("created_at", query.dateFrom);
-  if (query.dateTo) request = request.lte("created_at", `${query.dateTo}T23:59:59`);
-  if (query.search) {
-    request = request.or(
-      `full_name.ilike.%${query.search}%,email.ilike.%${query.search}%,phone.ilike.%${query.search}%`,
-      { referencedTable: "profiles" }
-    );
-  }
-
-  const from = (query.page - 1) * PAGE_SIZE;
-  const { data, count } = await request.range(from, from + PAGE_SIZE - 1);
-
-  const payments = (data ?? []).map((row) => {
+  const payments = data.map((row) => {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
     return {
       id: row.id,
@@ -90,5 +103,5 @@ export async function queryAdminPayments(
     };
   });
 
-  return { payments, totalCount: count ?? 0 };
+  return { payments, totalCount };
 }

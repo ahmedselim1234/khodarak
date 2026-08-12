@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addressUpdateSchema } from "@/lib/validation/address";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapAddressRow } from "@/lib/addresses/mapAddressRow";
 
 const ADDRESS_SELECT =
@@ -25,11 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = addressUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: existing } = await supabase

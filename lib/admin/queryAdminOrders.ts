@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { queryAdminPaginated } from "@/lib/admin/queryAdminPaginated";
 import type { OrderStatus } from "@/lib/orders/orderStatusTransition";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
 
@@ -47,41 +48,48 @@ export type AdminOrderRow = {
 // the orders_select_admin/profiles_select_admin RLS policies underneath
 // (data-model.md), not an app-layer filter, as the actual authorization
 // boundary (Constitution Principle V).
+type OrderRow = {
+  id: string;
+  scheduled_date: string;
+  status: string;
+  price_breakdown: PriceBreakdown;
+  profiles: { full_name: string; email: string; phone: string } | { full_name: string; email: string; phone: string }[] | null;
+};
+
 export async function queryAdminOrders(
   query: AdminOrdersQuery
 ): Promise<{ orders: AdminOrderRow[]; totalCount: number }> {
   const supabase = await createClient();
 
-  let request = supabase
-    .from("orders")
-    .select("id, scheduled_date, status, price_breakdown, profiles(full_name, email, phone)", {
-      count: "exact",
-    })
-    .order("scheduled_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  const { data, totalCount } = await queryAdminPaginated<OrderRow>({
+    supabase,
+    table: "orders",
+    select: "id, scheduled_date, status, price_breakdown, profiles(full_name, email, phone)",
+    page: query.page,
+    pageSize: PAGE_SIZE,
+    orderBy: [
+      { column: "scheduled_date", ascending: false },
+      { column: "created_at", ascending: false },
+    ],
+    filters: [
+      ...(query.status ? [{ column: "status", value: query.status }] : []),
+      ...(query.date ? [{ column: "scheduled_date", value: query.date }] : []),
+    ],
+    search: query.search,
+    searchColumns: ["full_name", "email", "phone"],
+    searchReferencedTable: "profiles",
+  });
 
-  if (query.status) request = request.eq("status", query.status);
-  if (query.date) request = request.eq("scheduled_date", query.date);
-  if (query.search) {
-    request = request.or(
-      `full_name.ilike.%${query.search}%,email.ilike.%${query.search}%,phone.ilike.%${query.search}%`,
-      { referencedTable: "profiles" }
-    );
-  }
-
-  const from = (query.page - 1) * PAGE_SIZE;
-  const { data, count } = await request.range(from, from + PAGE_SIZE - 1);
-
-  const orders = (data ?? []).map((row) => {
+  const orders = data.map((row) => {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
     return {
       id: row.id,
       customerName: profile?.full_name ?? "—",
       scheduledDate: row.scheduled_date,
       status: row.status as OrderStatus,
-      totalPerDelivery: (row.price_breakdown as PriceBreakdown).totalPerDelivery,
+      totalPerDelivery: row.price_breakdown.totalPerDelivery,
     };
   });
 
-  return { orders, totalCount: count ?? 0 };
+  return { orders, totalCount };
 }

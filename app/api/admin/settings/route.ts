@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { settingsUpdateSchema } from "@/lib/validation/settings";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
-
-const SETTINGS_SELECT =
-  "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
+import { FULL_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 // GET /api/admin/settings — per contracts/settings-admin-api.md.
 export async function GET() {
@@ -13,7 +12,7 @@ export async function GET() {
   const { error: authError } = await requireAdmin(supabase);
   if (authError) return authError;
 
-  const { data, error } = await supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single();
+  const { data, error } = await supabase.from("settings").select(FULL_SETTINGS_SELECT).eq("id", 1).single();
 
   if (error || !data) {
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -34,11 +33,7 @@ export async function PATCH(request: Request) {
   const result = settingsUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const {
@@ -88,7 +83,7 @@ export async function PATCH(request: Request) {
       ...(roundingMode !== undefined && { rounding_mode: roundingMode }),
     })
     .eq("id", 1)
-    .select(SETTINGS_SELECT)
+    .select(FULL_SETTINGS_SELECT)
     .single();
 
   if (error || !data) {

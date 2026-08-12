@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { queryAdminPaginated } from "@/lib/admin/queryAdminPaginated";
 import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
 
 export const PAGE_SIZE = 20;
@@ -38,9 +39,19 @@ export function parseAdminSubscriptionsSearchParams(
 export type AdminSubscriptionRow = {
   id: string;
   customerName: string;
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  deliveryIntervalDays: number | null;
   nextDeliveryDate: string;
   status: SubscriptionStatus;
+};
+
+type SubscriptionRow = {
+  id: string;
+  frequency: string;
+  delivery_interval_days: number | null;
+  status: string;
+  next_delivery_date: string;
+  profiles: { full_name: string; email: string; phone: string } | { full_name: string; email: string; phone: string }[] | null;
 };
 
 export async function queryAdminSubscriptions(
@@ -48,34 +59,30 @@ export async function queryAdminSubscriptions(
 ): Promise<{ subscriptions: AdminSubscriptionRow[]; totalCount: number }> {
   const supabase = await createClient();
 
-  let request = supabase
-    .from("subscriptions")
-    .select("id, frequency, status, next_delivery_date, profiles(full_name, email, phone)", {
-      count: "exact",
-    })
-    .order("created_at", { ascending: false });
+  const { data, totalCount } = await queryAdminPaginated<SubscriptionRow>({
+    supabase,
+    table: "subscriptions",
+    select: "id, frequency, delivery_interval_days, status, next_delivery_date, profiles(full_name, email, phone)",
+    page: query.page,
+    pageSize: PAGE_SIZE,
+    orderBy: [{ column: "created_at", ascending: false }],
+    filters: query.status ? [{ column: "status", value: query.status }] : [],
+    search: query.search,
+    searchColumns: ["full_name", "email", "phone"],
+    searchReferencedTable: "profiles",
+  });
 
-  if (query.status) request = request.eq("status", query.status);
-  if (query.search) {
-    request = request.or(
-      `full_name.ilike.%${query.search}%,email.ilike.%${query.search}%,phone.ilike.%${query.search}%`,
-      { referencedTable: "profiles" }
-    );
-  }
-
-  const from = (query.page - 1) * PAGE_SIZE;
-  const { data, count } = await request.range(from, from + PAGE_SIZE - 1);
-
-  const subscriptions = (data ?? []).map((row) => {
+  const subscriptions = data.map((row) => {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
     return {
       id: row.id,
       customerName: profile?.full_name ?? "—",
-      frequency: row.frequency as FrequencyKey,
+      frequency: row.frequency as FrequencyKey | "custom_interval",
+      deliveryIntervalDays: row.delivery_interval_days,
       nextDeliveryDate: row.next_delivery_date,
       status: row.status as SubscriptionStatus,
     };
   });
 
-  return { subscriptions, totalCount: count ?? 0 };
+  return { subscriptions, totalCount };
 }

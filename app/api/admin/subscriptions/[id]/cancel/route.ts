@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { cancelSubscription } from "@/lib/subscription/mutateSubscription";
 import { adminSubscriptionCancelSchema } from "@/lib/validation/adminSubscriptionAction";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // POST /api/admin/subscriptions/[id]/cancel — per contracts/admin-subscriptions-api.md.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,11 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const result = adminSubscriptionCancelSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: subscription } = await supabase

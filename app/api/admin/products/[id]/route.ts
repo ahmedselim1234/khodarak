@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { productUpdateSchema } from "@/lib/validation/product";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { mapProductRow } from "@/lib/products/mapProductRow";
 
 const PRODUCT_SELECT =
@@ -21,11 +22,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = productUpdateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   if (result.data.imageUrl !== undefined && !result.data.imageUrl.includes(IMAGE_URL_MARKER)) {
@@ -35,7 +32,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     );
   }
 
-  const { nameAr, category, price, unit, imageUrl, isAvailable, minQty, maxQty } = result.data;
+  const { nameAr, category, price, unit, imageUrl, isAvailable, minQty, maxQty, sortOrder } =
+    result.data;
 
   const { data, error } = await supabase
     .from("products")
@@ -48,6 +46,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(isAvailable !== undefined && { is_available: isAvailable }),
       ...(minQty !== undefined && { min_qty: minQty }),
       ...(maxQty !== undefined && { max_qty: maxQty }),
+      ...(sortOrder !== undefined && { sort_order: sortOrder }),
     })
     .eq("id", id)
     .select(PRODUCT_SELECT)

@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { pauseSubscription } from "@/lib/subscription/mutateSubscription";
 import { pauseEligibility } from "@/lib/subscription/pauseEligibility";
 import { subscriptionPauseSchema } from "@/lib/validation/subscriptionPause";
-
-const SETTINGS_SELECT = "max_pause_days, max_pauses_per_year";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
+import { PAUSE_SETTINGS_SELECT } from "@/lib/pricing/settingsSelect";
 
 // POST /api/subscriptions/[id]/pause — per contracts/pause-resume-cancel-api.md.
 // Immediate — bypasses the edit cutoff lock entirely (spec.md Clarification
@@ -24,11 +24,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const result = subscriptionPauseSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: subscription } = await supabase
@@ -50,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const [{ data: settingsRow }, { data: pastPauses }] = await Promise.all([
-    supabase.from("settings").select(SETTINGS_SELECT).eq("id", 1).single(),
+    supabase.from("settings").select(PAUSE_SETTINGS_SELECT).eq("id", 1).single(),
     supabase
       .from("subscription_pauses")
       .select("started_at")

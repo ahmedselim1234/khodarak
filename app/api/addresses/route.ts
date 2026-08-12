@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addressCreateSchema } from "@/lib/validation/address";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { shouldAutoDefault } from "@/lib/addresses/defaultInvariant";
 import { mapAddressRow } from "@/lib/addresses/mapAddressRow";
 
@@ -51,11 +52,7 @@ export async function POST(request: Request) {
   const result = addressCreateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { count } = await supabase

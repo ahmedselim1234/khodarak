@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchPayment } from "@/lib/payments/moyasarClient";
 import { replacePaymentMethod } from "@/lib/subscription/mutateSubscription";
 import { paymentMethodReplaceSchema } from "@/lib/validation/paymentMethodReplace";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 
 // POST /api/payment-methods — per contracts/settings-api.md (research.md
 // §5). Replaces the caller's saved card. The client only ever supplies the
@@ -24,11 +25,7 @@ export async function POST(request: Request) {
   const result = paymentMethodReplaceSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   let payment;

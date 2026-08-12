@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/requireAdmin";
 import { adminOrderStatusSchema } from "@/lib/validation/adminOrderStatus";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { isValidOrderStatusTransition, type OrderStatus } from "@/lib/orders/orderStatusTransition";
 
 // PATCH /api/admin/orders/[id] — per contracts/admin-orders-api.md.
@@ -19,11 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const result = adminOrderStatusSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0])] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: order } = await supabase.from("orders").select("id, status").eq("id", id).maybeSingle();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminOrderRow } from "@/lib/admin/queryAdminOrders";
 import { useUpdateOrderStatusMutation } from "@/lib/store/adminOrdersApi";
+import { useOptimisticRows } from "@/lib/admin/useOptimisticRows";
 import {
   isValidOrderStatusTransition,
   type OrderStatus,
@@ -35,19 +36,19 @@ const ALL_STATUSES: OrderStatus[] = ["pending", "out_for_delivery", "delivered",
 // in; `overrides` is only the not-yet-confirmed layer on top.
 export function OrderTable({ orders }: { orders: AdminOrderRow[] }) {
   const router = useRouter();
-  const [overrides, setOverrides] = useState<Record<string, OrderStatus>>({});
+  const { rows: mergedOrders, setOptimistic, revert } = useOptimisticRows(orders);
   const [error, setError] = useState<string | null>(null);
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  async function handleTransition(id: string, from: OrderStatus, to: OrderStatus) {
+  async function handleTransition(order: AdminOrderRow, to: OrderStatus) {
     setError(null);
-    setOverrides((current) => ({ ...current, [id]: to }));
+    setOptimistic({ ...order, status: to });
 
     try {
-      await updateOrderStatus({ id, status: to }).unwrap();
+      await updateOrderStatus({ id: order.id, status: to }).unwrap();
       router.refresh();
     } catch (err) {
-      setOverrides((current) => ({ ...current, [id]: from }));
+      revert(order.id);
       const data = (err as { data?: { error?: string } })?.data;
       setError(
         data?.error === "status_changed"
@@ -80,8 +81,8 @@ export function OrderTable({ orders }: { orders: AdminOrderRow[] }) {
           </TRow>
         </THead>
         <TBody>
-          {orders.map((order) => {
-            const status = overrides[order.id] ?? order.status;
+          {mergedOrders.map((order) => {
+            const status = order.status;
             const transitions = ALL_STATUSES.filter((next) =>
               isValidOrderStatusTransition(status, next)
             );
@@ -103,7 +104,8 @@ export function OrderTable({ orders }: { orders: AdminOrderRow[] }) {
                         <button
                           key={next}
                           type="button"
-                          onClick={() => handleTransition(order.id, status, next)}
+                          onClick={() => handleTransition(order, next)}
+                          aria-label={`${ACTION_LABELS[next]} — طلب ${order.customerName}`}
                           className={`text-caption font-semibold transition-opacity duration-fast hover:underline ${
                             next === "cancelled" ? "text-error" : "text-primary"
                           }`}

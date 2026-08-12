@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { paymentInitiateSchema } from "@/lib/validation/paymentInitiate";
+import { formatZodFieldErrors } from "@/lib/validation/formatZodError";
 import { toHalalas } from "@/lib/payments/halalas";
 import { isThrottled } from "@/lib/payments/retryThrottle";
 import { createPayment } from "@/lib/payments/moyasarClient";
@@ -26,11 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const result = paymentInitiateSchema.safeParse(body);
 
   if (!result.success) {
-    const fields: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      fields[String(issue.path[0] ?? "form")] = issue.message;
-    }
-    return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
+    return formatZodFieldErrors(result.error);
   }
 
   const { data: subscription } = await supabase

@@ -5,6 +5,7 @@ import { Logo } from "./Logo";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { CartBar } from "@/components/cart/CartBar";
+import { MobileNavMenu } from "@/components/ui/MobileNavMenu";
 
 const links = [
   { href: "/", label: "الرئيسية" },
@@ -60,6 +61,7 @@ export async function TopNav() {
           </div>
 
           <div className="flex items-center gap-stack-sm">
+            <MobileNavMenu links={links} />
             <CartBar />
             {user ? (
               <>
@@ -89,21 +91,6 @@ export async function TopNav() {
             )}
           </div>
         </nav>
-
-        {/* Mobile: the same destinations as a single scrollable row, rather
-            than being hidden entirely below md as they were before. */}
-        <div className="no-scrollbar -mx-margin-mobile flex gap-stack-md overflow-x-auto px-margin-mobile pb-2.5 text-small md:hidden">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              prefetch
-              className="whitespace-nowrap font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
       </Container>
     </header>
   );

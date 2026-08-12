@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LayoutDashboard, UserCircle2 } from "lucide-react";
 import { Container } from "./Container";
+import { Logo } from "./Logo";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { CartBar } from "@/components/cart/CartBar";
@@ -25,9 +26,10 @@ export async function TopNav() {
         <nav className="flex h-16 items-center justify-between gap-stack-md">
           <Link
             href="/"
-            className="text-h2 font-bold text-primary transition-opacity duration-fast hover:opacity-80"
+            className="transition-opacity duration-fast hover:opacity-80"
+            aria-label="خضارك — الصفحة الرئيسية"
           >
-            خضارك
+            <Logo size="md" priority />
           </Link>
 
           <div className="hidden items-center gap-stack-lg text-small md:flex">

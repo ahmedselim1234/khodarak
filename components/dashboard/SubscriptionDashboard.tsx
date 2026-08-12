@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ShoppingBasket } from "lucide-react";
 import { useGetSubscriptionQuery, useResumeSubscriptionMutation } from "@/lib/store/dashboardApi";
 import type { MappedProduct } from "@/lib/products/mapProductRow";
-import type { Frequencies } from "@/lib/pricing/mapSettingsRow";
 import { SubscriptionStatusCard } from "./SubscriptionStatusCard";
 import { PendingChangeBanner } from "./PendingChangeBanner";
 import { SubscriptionEditor } from "./SubscriptionEditor";
@@ -22,11 +21,9 @@ type DialogState = "closed" | "edit" | "pause" | "cancel";
 export function SubscriptionDashboard({
   subscriptionId,
   products,
-  frequencies,
 }: {
   subscriptionId: string | null;
   products: MappedProduct[];
-  frequencies: Frequencies;
 }) {
   const [dialog, setDialog] = useState<DialogState>("closed");
   const {
@@ -96,9 +93,9 @@ export function SubscriptionDashboard({
         <SubscriptionEditor
           subscriptionId={subscriptionId}
           products={products}
-          frequencies={frequencies}
           initialItems={subscription.items}
           initialFrequency={subscription.frequency}
+          initialDeliveryInterval={subscription.deliveryInterval}
           initialAddressId={subscription.addressId}
           onClose={() => setDialog("closed")}
         />

@@ -2,7 +2,11 @@ import type { FrequencyKey, MappedSettings } from "./mapSettingsRow";
 
 export type CalculateInput = {
   items: Array<{ productId: string; price: number; quantity: number }>;
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  // Required when frequency === "custom_interval" (Phase 10, research.md §3)
+  // — sources the frequency discount from a resolved delivery interval
+  // instead of settings.frequencies. Legacy frequencies are untouched.
+  deliveryInterval?: { discountPercent: number; deliveriesPerMonth: number };
   city: { id: string; deliveryFeeOverride: number | null };
   settings: MappedSettings;
 };
@@ -46,15 +50,20 @@ function applyRounding(value: number, mode: MappedSettings["roundingMode"]): num
 // resolved by the caller (contracts/pricing-calculation.md). Runs the
 // documented calculation order exactly; never reordered.
 export function calculate(input: CalculateInput): PriceBreakdown {
-  const { items, frequency, city, settings } = input;
+  const { items, frequency, deliveryInterval, city, settings } = input;
 
   const itemsSubtotal = roundTo(
     items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     2
   );
 
-  const frequencyRule = settings.frequencies[frequency];
-  const discountPercent = frequencyRule?.enabled ? frequencyRule.discountPercent : 0;
+  const frequencyRule = frequency === "custom_interval" ? undefined : settings.frequencies[frequency];
+  const discountPercent =
+    frequency === "custom_interval"
+      ? (deliveryInterval?.discountPercent ?? 0)
+      : frequencyRule?.enabled
+        ? frequencyRule.discountPercent
+        : 0;
   const frequencyDiscountAmount = roundTo(itemsSubtotal * (discountPercent / 100), 2);
   const afterDiscount = roundTo(itemsSubtotal - frequencyDiscountAmount, 2);
 
@@ -83,7 +92,10 @@ export function calculate(input: CalculateInput): PriceBreakdown {
   }
 
   const totalPerDelivery = applyRounding(preRoundingTotal, settings.roundingMode);
-  const deliveriesPerMonth = frequencyRule?.deliveriesPerMonth ?? 0;
+  const deliveriesPerMonth =
+    frequency === "custom_interval"
+      ? (deliveryInterval?.deliveriesPerMonth ?? 0)
+      : (frequencyRule?.deliveriesPerMonth ?? 0);
   const estimatedMonthly = roundTo(totalPerDelivery * deliveriesPerMonth, 2);
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);

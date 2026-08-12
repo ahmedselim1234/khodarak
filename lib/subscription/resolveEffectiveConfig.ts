@@ -1,5 +1,8 @@
 export type SubscriptionConfig = {
-  frequency: "weekly" | "biweekly" | "monthly";
+  frequency: "weekly" | "biweekly" | "monthly" | "custom_interval";
+  // Present iff frequency === "custom_interval" (Phase 10, research.md §1).
+  deliveryIntervalId?: string | null;
+  deliveryIntervalDays?: number | null;
   addressId: string;
   items: Array<{ productId: string; quantity: number }>;
   priceBreakdown: unknown;
@@ -45,6 +48,8 @@ export function resolveEffectiveConfig(
   return {
     locked: {
       frequency: pending.frequency,
+      deliveryIntervalId: pending.deliveryIntervalId,
+      deliveryIntervalDays: pending.deliveryIntervalDays,
       addressId: pending.addressId,
       items: pending.items,
       priceBreakdown: pending.priceBreakdown,

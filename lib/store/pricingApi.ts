@@ -4,7 +4,8 @@ import type { PriceBreakdown } from "@/lib/pricing/calculate";
 
 export type PricingPreviewRequest = {
   items: Array<{ productId: string; quantity: number }>;
-  frequency: FrequencyKey;
+  frequency?: FrequencyKey;
+  deliveryIntervalId?: string;
   cityId: string;
 };
 

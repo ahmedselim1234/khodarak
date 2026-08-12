@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
 import type { TimeSlotId } from "@/lib/subscription/timeSlots";
 
+// FR-005: a new subscription only ever carries a deliveryIntervalId — no
+// legacy frequency is accepted for creation (Phase 10).
 export type SubscriptionCreateRequest = {
-  frequency: FrequencyKey;
+  deliveryIntervalId: string;
   addressId: string;
   nextDeliveryDate: string;
   deliveryTimeSlot: TimeSlotId;

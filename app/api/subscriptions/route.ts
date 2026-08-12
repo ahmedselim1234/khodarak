@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { subscriptionCreateSchema } from "@/lib/validation/subscription";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate } from "@/lib/pricing/calculate";
+import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 import { isDateSelectable } from "@/lib/subscription/selectableDeliveryDates";
 
 const SETTINGS_SELECT =
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
   }
 
-  const { frequency, addressId, nextDeliveryDate, deliveryTimeSlot } = result.data;
+  const { deliveryIntervalId, addressId, nextDeliveryDate, deliveryTimeSlot } = result.data;
 
   const { data: settingsRow, error: settingsError } = await supabase
     .from("settings")
@@ -59,10 +60,22 @@ export async function POST(request: Request) {
 
   const settings = mapSettingsRow(settingsRow);
 
-  // FR-004: a disabled frequency can't be confirmed against.
-  if (!settings.frequencies[frequency]?.enabled) {
-    return NextResponse.json({ error: "frequency_disabled" }, { status: 422 });
+  // FR-005/FR-007: resolved and re-validated server-side — never trusted
+  // from the client (Phase 10, contracts/subscription-interval-integration.md).
+  const { data: interval } = await supabase
+    .from("delivery_intervals")
+    .select("id, days, discount_percent, is_active")
+    .eq("id", deliveryIntervalId)
+    .maybeSingle();
+
+  if (!interval) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
+  if (!interval.is_active) {
+    return NextResponse.json({ error: "interval_unavailable" }, { status: 422 });
+  }
+
+  const intervalDiscountPercent = Number(interval.discount_percent);
 
   // FR-006: re-validated server-side — the picker already restricts this,
   // but "never a client-computed or stale" applies to validation too.
@@ -119,7 +132,11 @@ export async function POST(request: Request) {
 
   const breakdown = calculate({
     items: resolvedItems,
-    frequency,
+    frequency: "custom_interval",
+    deliveryInterval: {
+      discountPercent: intervalDiscountPercent,
+      deliveriesPerMonth: estimateDeliveriesPerMonth(interval.days),
+    },
     city: { id: city.id, deliveryFeeOverride: city.delivery_fee_override },
     settings,
   });
@@ -146,7 +163,10 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       address_id: addressId,
-      frequency,
+      frequency: "custom_interval",
+      delivery_interval_id: interval.id,
+      delivery_interval_days: interval.days,
+      delivery_interval_last_discount_percent: intervalDiscountPercent,
       next_delivery_date: nextDeliveryDate,
       delivery_time_slot: deliveryTimeSlot,
       price_breakdown: breakdown,

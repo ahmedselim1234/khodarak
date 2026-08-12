@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { MappedProduct } from "@/lib/products/mapProductRow";
-import type { Frequencies, FrequencyKey } from "@/lib/pricing/mapSettingsRow";
-import type { SubscriptionItem } from "@/lib/store/dashboardApi";
+import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
+import type { SubscriptionDeliveryInterval, SubscriptionItem } from "@/lib/store/dashboardApi";
 import { useEditSubscriptionMutation } from "@/lib/store/dashboardApi";
 import { useLazyPreviewPriceQuery } from "@/lib/store/pricingApi";
 import { useListAddressesQuery } from "@/lib/store/addressesApi";
 import { clampQuantity } from "@/lib/cart/clampQuantity";
-import { FrequencySelector } from "@/components/subscription/FrequencySelector";
+import { DeliveryIntervalSelector } from "@/components/subscription/DeliveryIntervalSelector";
 import { AddressSelector } from "@/components/subscription/AddressSelector";
 import { PriceBreakdownCard } from "@/components/pricing/PriceBreakdownCard";
 
@@ -29,24 +29,31 @@ const UNIT_ERROR_MESSAGES: Record<string, string> = {
 export function SubscriptionEditor({
   subscriptionId,
   products,
-  frequencies,
   initialItems,
   initialFrequency,
+  initialDeliveryInterval,
   initialAddressId,
   onClose,
 }: {
   subscriptionId: string;
   products: MappedProduct[];
-  frequencies: Frequencies;
   initialItems: SubscriptionItem[];
-  initialFrequency: FrequencyKey;
+  initialFrequency: FrequencyKey | "custom_interval";
+  initialDeliveryInterval: SubscriptionDeliveryInterval | null;
   initialAddressId: string;
   onClose: () => void;
 }) {
   const [items, setItems] = useState<Record<string, number>>(
     Object.fromEntries(initialItems.map((item) => [item.productId, item.quantity]))
   );
-  const [frequency, setFrequency] = useState<FrequencyKey>(initialFrequency);
+  // FR-009/010 (research.md §6): the interval control is offered
+  // regardless of whether the subscription is currently legacy or already
+  // interval-based — but a still-legacy subscription that hasn't touched it
+  // keeps resubmitting its unchanged initialFrequency (never a way to
+  // select a legacy frequency directly, only to leave it alone).
+  const [deliveryIntervalId, setDeliveryIntervalId] = useState<string | null>(
+    initialDeliveryInterval?.id ?? null
+  );
   const [addressId, setAddressId] = useState(initialAddressId);
   const [addingProductId, setAddingProductId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -66,18 +73,22 @@ export function SubscriptionEditor({
     if (entries.length === 0 || !cityId) return;
 
     debounceRef.current = setTimeout(() => {
-      triggerPreview({
-        items: entries.map(([productId, quantity]) => ({ productId, quantity })),
-        frequency,
-        cityId,
-      });
+      triggerPreview(
+        deliveryIntervalId
+          ? { items: entries.map(([productId, quantity]) => ({ productId, quantity })), deliveryIntervalId, cityId }
+          : {
+              items: entries.map(([productId, quantity]) => ({ productId, quantity })),
+              frequency: initialFrequency as FrequencyKey,
+              cityId,
+            }
+      );
     }, DEBOUNCE_MS);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- itemsKey is a stable serialization used to detect content changes only.
-  }, [itemsKey, frequency, cityId]);
+  }, [itemsKey, deliveryIntervalId, cityId]);
 
   const productById = new Map(products.map((product) => [product.id, product]));
   const selectedEntries = Object.entries(items).filter(([, quantity]) => quantity > 0);
@@ -106,11 +117,17 @@ export function SubscriptionEditor({
     try {
       const response = await editSubscription({
         id: subscriptionId,
-        body: {
-          items: selectedEntries.map(([productId, quantity]) => ({ productId, quantity })),
-          frequency,
-          addressId,
-        },
+        body: deliveryIntervalId
+          ? {
+              items: selectedEntries.map(([productId, quantity]) => ({ productId, quantity })),
+              deliveryIntervalId,
+              addressId,
+            }
+          : {
+              items: selectedEntries.map(([productId, quantity]) => ({ productId, quantity })),
+              frequency: initialFrequency as FrequencyKey,
+              addressId,
+            },
       }).unwrap();
 
       if (response.applied === "pending") {
@@ -125,6 +142,8 @@ export function SubscriptionEditor({
         setError("أحد المنتجات المختارة لم يعد متوفراً");
       } else if (data?.error === "not_editable") {
         setError("لا يمكن تعديل هذا الاشتراك في حالته الحالية");
+      } else if (data?.error === "interval_unavailable") {
+        setError("الفاصل الزمني المختار لم يعد متاحاً — الرجاء اختيار فاصل آخر");
       } else {
         setError("تعذر حفظ التعديل — الرجاء المحاولة مرة أخرى");
       }
@@ -211,7 +230,7 @@ export function SubscriptionEditor({
           </div>
         )}
 
-        <FrequencySelector frequencies={frequencies} value={frequency} onChange={setFrequency} />
+        <DeliveryIntervalSelector value={deliveryIntervalId} onChange={setDeliveryIntervalId} />
         <AddressSelector value={addressId} onChange={setAddressId} />
 
         {previewLoading || !breakdown ? (

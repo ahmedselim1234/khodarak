@@ -6,12 +6,11 @@ import { useGetCartQuery } from "@/lib/store/cartApi";
 import { useListAddressesQuery } from "@/lib/store/addressesApi";
 import { useLazyPreviewPriceQuery } from "@/lib/store/pricingApi";
 import { useCreateSubscriptionMutation } from "@/lib/store/subscriptionsApi";
-import type { FrequencyKey, Frequencies } from "@/lib/pricing/mapSettingsRow";
 import type { MappedProduct, ProductCategory } from "@/lib/products/mapProductRow";
 import type { TimeSlotId } from "@/lib/subscription/timeSlots";
 import { WizardProgressHeader } from "./WizardProgressHeader";
 import { BoxCategoryTabs } from "./BoxCategoryTabs";
-import { FrequencySelector } from "./FrequencySelector";
+import { DeliveryIntervalSelector } from "./DeliveryIntervalSelector";
 import { DeliveryDatePicker } from "./DeliveryDatePicker";
 import { AddressSelector } from "./AddressSelector";
 import { TimeSlotPicker } from "./TimeSlotPicker";
@@ -22,25 +21,20 @@ const DEBOUNCE_MS = 300;
 
 export function SubscriptionWizard({
   products,
-  frequencies,
   defaultCityId,
   firstDeliveryLeadDays,
   blackoutWeekdays,
 }: {
   products: MappedProduct[];
-  frequencies: Frequencies;
   defaultCityId: string | null;
   firstDeliveryLeadDays: number;
   blackoutWeekdays: number[];
 }) {
   const router = useRouter();
-  const enabledFrequencies = (Object.keys(frequencies) as FrequencyKey[]).filter(
-    (key) => frequencies[key].enabled
-  );
 
   const [step, setStep] = useState<"build" | "checkout">("build");
   const [category, setCategory] = useState<ProductCategory>("vegetables");
-  const [frequency, setFrequency] = useState<FrequencyKey | null>(enabledFrequencies[0] ?? null);
+  const [deliveryIntervalId, setDeliveryIntervalId] = useState<string | null>(null);
   const [cityId, setCityId] = useState<string | null>(defaultCityId);
   const [deliveryDate, setDeliveryDate] = useState<string | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null);
@@ -59,14 +53,14 @@ export function SubscriptionWizard({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (!cart || cart.items.length === 0 || !frequency || !cityId) {
+    if (!cart || cart.items.length === 0 || !deliveryIntervalId || !cityId) {
       return;
     }
 
     debounceRef.current = setTimeout(() => {
       triggerPreview({
         items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-        frequency,
+        deliveryIntervalId,
         cityId,
       });
     }, DEBOUNCE_MS);
@@ -75,18 +69,18 @@ export function SubscriptionWizard({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cartItemsKey is a derived, stable serialization of cart.items used purely to detect changes; including cart itself would re-run on every fetch, not just on content changes.
-  }, [cartItemsKey, frequency, cityId]);
+  }, [cartItemsKey, deliveryIntervalId, cityId]);
 
   const visibleProducts = products.filter((product) => product.category === category);
   const breakdown = previewData?.breakdown;
 
   async function handleConfirm() {
-    if (!frequency || !addressId || !deliveryDate || !timeSlot) return;
+    if (!deliveryIntervalId || !addressId || !deliveryDate || !timeSlot) return;
     setSubmitError(null);
 
     try {
       const response = await createSubscription({
-        frequency,
+        deliveryIntervalId,
         addressId,
         nextDeliveryDate: deliveryDate,
         deliveryTimeSlot: timeSlot,
@@ -97,7 +91,9 @@ export function SubscriptionWizard({
     }
   }
 
-  const canProceedToCheckout = Boolean(frequency && deliveryDate && cart && cart.items.length > 0);
+  const canProceedToCheckout = Boolean(
+    deliveryIntervalId && deliveryDate && cart && cart.items.length > 0
+  );
 
   return (
     <div>
@@ -109,7 +105,7 @@ export function SubscriptionWizard({
             <>
               <BoxCategoryTabs activeCategory={category} onChange={setCategory} />
               <ProductGrid products={visibleProducts} />
-              <FrequencySelector frequencies={frequencies} value={frequency} onChange={setFrequency} />
+              <DeliveryIntervalSelector value={deliveryIntervalId} onChange={setDeliveryIntervalId} />
               <DeliveryDatePicker
                 leadDays={firstDeliveryLeadDays}
                 blackoutWeekdays={blackoutWeekdays}

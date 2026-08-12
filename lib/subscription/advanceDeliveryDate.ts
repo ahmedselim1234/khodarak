@@ -36,3 +36,22 @@ export function advanceDeliveryDate(
 
   return toIsoDate(date);
 }
+
+// Phase 10 sibling of advanceDeliveryDate — same anchor-from-current-date
+// and blackout-skip behavior, but adds a literal day count instead of
+// switching on a named frequency (contracts/renewal-interval-advance.md).
+export function advanceDeliveryDateByInterval(
+  currentDeliveryDate: string,
+  intervalDays: number,
+  blackoutWeekdays: number[]
+): string {
+  const date = new Date(`${currentDeliveryDate}T00:00:00Z`);
+
+  date.setUTCDate(date.getUTCDate() + intervalDays);
+
+  while (blackoutWeekdays.includes(date.getUTCDay())) {
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+
+  return toIsoDate(date);
+}

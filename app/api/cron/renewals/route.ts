@@ -138,6 +138,9 @@ export async function POST(request: Request) {
         renewal_charge_context: reprice.ok
           ? {
               frequency: reprice.frequency,
+              deliveryIntervalId: reprice.deliveryIntervalId,
+              deliveryIntervalDays: reprice.deliveryIntervalDays,
+              deliveryIntervalDiscountPercent: reprice.deliveryIntervalDiscountPercent,
               addressId: reprice.addressId,
               items: reprice.items,
               breakdown: reprice.breakdown,

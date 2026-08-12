@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { resolveEffectiveConfig } from "@/lib/subscription/resolveEffectiveConfig";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
 import { calculate, type PriceBreakdown } from "@/lib/pricing/calculate";
+import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
 
 const SETTINGS_SELECT =
@@ -11,7 +12,12 @@ const SETTINGS_SELECT =
 export type RepriceResult =
   | {
       ok: true;
-      frequency: FrequencyKey;
+      frequency: FrequencyKey | "custom_interval";
+      // Present iff frequency === "custom_interval" (Phase 10, research.md §5,
+      // contracts/renewal-interval-advance.md).
+      deliveryIntervalId?: string;
+      deliveryIntervalDays?: number;
+      deliveryIntervalDiscountPercent?: number;
       addressId: string;
       items: Array<{ productId: string; quantity: number }>;
       droppedProductIds: string[];
@@ -33,7 +39,7 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select(
-      "id, frequency, address_id, next_delivery_date, pending_frequency, pending_address_id, pending_price_breakdown, pending_effective_from"
+      "id, frequency, address_id, next_delivery_date, pending_frequency, pending_address_id, pending_price_breakdown, pending_effective_from, delivery_interval_id, delivery_interval_days, delivery_interval_last_discount_percent, pending_delivery_interval_id, pending_delivery_interval_days"
     )
     .eq("id", subscriptionId)
     .single();
@@ -59,6 +65,8 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
     nextDeliveryDate: subscription.next_delivery_date,
     current: {
       frequency: subscription.frequency,
+      deliveryIntervalId: subscription.delivery_interval_id,
+      deliveryIntervalDays: subscription.delivery_interval_days,
       addressId: subscription.address_id,
       items: (items ?? []).map((row) => ({ productId: row.product_id, quantity: row.quantity })),
       priceBreakdown: null,
@@ -66,6 +74,8 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
     pending: hasPendingChange
       ? {
           frequency: subscription.pending_frequency,
+          deliveryIntervalId: subscription.pending_delivery_interval_id,
+          deliveryIntervalDays: subscription.pending_delivery_interval_days,
           addressId: subscription.pending_address_id,
           items: (pendingItems ?? []).map((row) => ({
             productId: row.product_id,
@@ -126,9 +136,40 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
 
   const cityRow = Array.isArray(address.cities) ? address.cities[0] : address.cities;
 
+  // Phase 10 (research.md §5): live discount when the interval is still
+  // active; otherwise fall back to the subscription's own last-applied
+  // snapshot (only meaningful when the locked interval is the subscription's
+  // existing one, not a pending switch resolving into an interval that's
+  // since been deactivated before ever taking effect — that edge case has
+  // no established snapshot to fall back to, so it's treated as 0%).
+  let deliveryInterval: { discountPercent: number; deliveriesPerMonth: number } | undefined;
+  let deliveryIntervalDiscountPercent: number | undefined;
+
+  if (effective.locked.frequency === "custom_interval") {
+    const { data: interval } = await supabase
+      .from("delivery_intervals")
+      .select("discount_percent, is_active")
+      .eq("id", effective.locked.deliveryIntervalId!)
+      .maybeSingle();
+
+    if (interval && interval.is_active) {
+      deliveryIntervalDiscountPercent = Number(interval.discount_percent);
+    } else if (subscription.delivery_interval_id === effective.locked.deliveryIntervalId) {
+      deliveryIntervalDiscountPercent = Number(subscription.delivery_interval_last_discount_percent ?? 0);
+    } else {
+      deliveryIntervalDiscountPercent = 0;
+    }
+
+    deliveryInterval = {
+      discountPercent: deliveryIntervalDiscountPercent,
+      deliveriesPerMonth: estimateDeliveriesPerMonth(effective.locked.deliveryIntervalDays!),
+    };
+  }
+
   const breakdown = calculate({
     items: survivingItems,
     frequency: effective.locked.frequency,
+    deliveryInterval,
     city: { id: address.city_id, deliveryFeeOverride: cityRow?.delivery_fee_override ?? null },
     settings,
   });
@@ -136,6 +177,11 @@ export async function repriceSubscriptionForRenewal(subscriptionId: string): Pro
   return {
     ok: true,
     frequency: effective.locked.frequency,
+    deliveryIntervalId:
+      effective.locked.frequency === "custom_interval" ? effective.locked.deliveryIntervalId! : undefined,
+    deliveryIntervalDays:
+      effective.locked.frequency === "custom_interval" ? effective.locked.deliveryIntervalDays! : undefined,
+    deliveryIntervalDiscountPercent,
     addressId: effective.locked.addressId,
     items: survivingItems.map(({ productId, quantity }) => ({ productId, quantity })),
     droppedProductIds,

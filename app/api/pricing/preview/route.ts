@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { pricingPreviewRequestSchema } from "@/lib/validation/pricingPreview";
 import { mapSettingsRow } from "@/lib/pricing/mapSettingsRow";
-import { calculate } from "@/lib/pricing/calculate";
+import { calculate, type CalculateInput } from "@/lib/pricing/calculate";
+import { estimateDeliveriesPerMonth } from "@/lib/pricing/deliveryInterval";
 
 const SETTINGS_SELECT =
   "frequencies, min_order_value, max_items_per_box, edit_cutoff_hours, first_delivery_lead_days, blackout_weekdays, delivery_mode, delivery_flat_fee, delivery_free_threshold, max_pause_days, max_pauses_per_year, vat_percent, prices_include_vat, rounding_mode, updated_at";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "validation_failed", fields }, { status: 400 });
   }
 
-  const { items, frequency, cityId } = result.data;
+  const { items, frequency, deliveryIntervalId, cityId } = result.data;
 
   const { data: settingsRow, error: settingsError } = await supabase
     .from("settings")
@@ -40,9 +41,35 @@ export async function POST(request: Request) {
 
   const settings = mapSettingsRow(settingsRow);
 
-  // FR-012: a disabled frequency can't be calculated against.
-  if (!settings.frequencies[frequency]?.enabled) {
-    return NextResponse.json({ error: "frequency_disabled" }, { status: 422 });
+  let calculateFrequencyInput: CalculateInput["frequency"];
+  let deliveryInterval: CalculateInput["deliveryInterval"];
+
+  if (deliveryIntervalId) {
+    // Phase 10: contracts/subscription-interval-integration.md.
+    const { data: interval } = await supabase
+      .from("delivery_intervals")
+      .select("id, days, discount_percent, is_active")
+      .eq("id", deliveryIntervalId)
+      .maybeSingle();
+
+    if (!interval) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    if (!interval.is_active) {
+      return NextResponse.json({ error: "interval_unavailable" }, { status: 422 });
+    }
+
+    calculateFrequencyInput = "custom_interval";
+    deliveryInterval = {
+      discountPercent: Number(interval.discount_percent),
+      deliveriesPerMonth: estimateDeliveriesPerMonth(interval.days),
+    };
+  } else {
+    // FR-012: a disabled frequency can't be calculated against.
+    if (!settings.frequencies[frequency!]?.enabled) {
+      return NextResponse.json({ error: "frequency_disabled" }, { status: 422 });
+    }
+    calculateFrequencyInput = frequency!;
   }
 
   const { data: city } = await supabase
@@ -85,7 +112,8 @@ export async function POST(request: Request) {
 
   const breakdown = calculate({
     items: resolvedItems,
-    frequency,
+    frequency: calculateFrequencyInput,
+    deliveryInterval,
     city: { id: city.id, deliveryFeeOverride: city.delivery_fee_override },
     settings,
   });

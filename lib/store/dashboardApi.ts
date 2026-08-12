@@ -9,8 +9,16 @@ export type SubscriptionItem = {
   unitPrice: number;
 };
 
+// Phase 10: present iff frequency === "custom_interval".
+export type SubscriptionDeliveryInterval = {
+  id: string;
+  days: number;
+  discountPercent: number | null;
+};
+
 export type SubscriptionPendingChange = {
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  deliveryInterval: SubscriptionDeliveryInterval | null;
   addressId: string;
   items: SubscriptionItem[];
   priceBreakdown: PriceBreakdown;
@@ -20,7 +28,8 @@ export type SubscriptionPendingChange = {
 export type SubscriptionDetail = {
   id: string;
   status: "pending_payment" | "active" | "paused" | "cancelled";
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  deliveryInterval: SubscriptionDeliveryInterval | null;
   nextDeliveryDate: string;
   pausedUntil: string | null;
   insideEditCutoff: boolean;
@@ -31,9 +40,13 @@ export type SubscriptionDetail = {
   health: "good" | "needs_attention";
 };
 
+// Phase 10 (research.md §6): exactly one of frequency (resubmit the
+// current legacy value, unchanged) or deliveryIntervalId (the only way to
+// actually change the cadence) — never both.
 export type SubscriptionEditRequest = {
   items: Array<{ productId: string; quantity: number }>;
-  frequency: FrequencyKey;
+  frequency?: FrequencyKey;
+  deliveryIntervalId?: string;
   addressId: string;
 };
 
@@ -75,7 +88,10 @@ export const dashboardApi = createApi({
           current && !current.insideEditCutoff
             ? dispatch(
                 dashboardApi.util.updateQueryData("getSubscription", id, (draft) => {
-                  draft.frequency = body.frequency;
+                  // deliveryInterval left as-is here (its discountPercent/id
+                  // aren't knowable client-side) — the invalidation that
+                  // follows brings back the server-resolved value.
+                  if (body.frequency) draft.frequency = body.frequency;
                   draft.addressId = body.addressId;
                   draft.items = body.items.map((item) => {
                     const existing = draft.items.find(

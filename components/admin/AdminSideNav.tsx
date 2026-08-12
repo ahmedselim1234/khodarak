@@ -6,6 +6,7 @@ import {
   MapPin,
   Package2,
   PackageSearch,
+  Percent,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
   { href: "/admin/orders", label: "الطلبات", Icon: Package2 },
   { href: "/admin/payments", label: "المدفوعات", Icon: CreditCard },
   { href: "/admin/cities", label: "المدن", Icon: MapPin },
+  { href: "/admin/delivery-intervals", label: "إدارة الخصومات", Icon: Percent },
   { href: "/admin/settings", label: "الإعدادات", Icon: Settings },
 ];
 

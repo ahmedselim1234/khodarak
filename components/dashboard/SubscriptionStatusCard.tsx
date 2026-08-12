@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { XCircle } from "lucide-react";
 import type { SubscriptionDetail } from "@/lib/store/dashboardApi";
+import { formatDeliveryCadenceLabel } from "@/lib/pricing/deliveryInterval";
 import { SubscriptionHealthBadge } from "./SubscriptionHealthBadge";
-
-const FREQUENCY_LABELS: Record<string, string> = {
-  weekly: "أسبوعي",
-  biweekly: "كل أسبوعين",
-  monthly: "شهري",
-};
 
 // Presentational — active/paused/cancelled variants (US1 Acceptance
 // Scenarios 1–3). The empty (never-subscribed) state is handled by the
@@ -80,7 +75,9 @@ export function SubscriptionStatusCard({
           </div>
           <div>
             <p className="font-label-sm text-label-sm text-on-surface-variant">التردد</p>
-            <p className="font-bold">{FREQUENCY_LABELS[subscription.frequency]}</p>
+            <p className="font-bold">
+              {formatDeliveryCadenceLabel(subscription.frequency, subscription.deliveryInterval)}
+            </p>
           </div>
           <div>
             <p className="font-label-sm text-label-sm text-on-surface-variant">

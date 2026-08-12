@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
-import { advanceDeliveryDate } from "@/lib/subscription/advanceDeliveryDate";
+import { advanceDeliveryDate, advanceDeliveryDateByInterval } from "@/lib/subscription/advanceDeliveryDate";
 import { nextRetryOrSuspend } from "@/lib/payments/dunningSchedule";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
 import type { FrequencyKey } from "@/lib/pricing/mapSettingsRow";
@@ -9,7 +9,12 @@ type VerifiedStatus = "paid" | "failed";
 type ServiceRoleClient = ReturnType<typeof createServiceRoleClient>;
 
 export type RenewalChargeContext = {
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  // Present iff frequency === "custom_interval" (Phase 10,
+  // contracts/renewal-interval-advance.md).
+  deliveryIntervalId?: string;
+  deliveryIntervalDays?: number;
+  deliveryIntervalDiscountPercent?: number;
   addressId: string;
   items: Array<{ productId: string; quantity: number }>;
   breakdown: PriceBreakdown;
@@ -156,11 +161,14 @@ async function handleSuccessfulRenewal(
   // Step C — advance the cycle (FR-008): next_delivery_date moves forward
   // by exactly one frequency period from the delivery that just happened,
   // never from "today".
-  const newNextDeliveryDate = advanceDeliveryDate(
-    subscription.next_delivery_date,
-    context.frequency,
-    settingsRow?.blackout_weekdays ?? []
-  );
+  const newNextDeliveryDate =
+    context.frequency === "custom_interval"
+      ? advanceDeliveryDateByInterval(
+          subscription.next_delivery_date,
+          context.deliveryIntervalDays!,
+          settingsRow?.blackout_weekdays ?? []
+        )
+      : advanceDeliveryDate(subscription.next_delivery_date, context.frequency, settingsRow?.blackout_weekdays ?? []);
 
   const subscriptionUpdate: Record<string, unknown> = {
     frequency: context.frequency,
@@ -170,6 +178,15 @@ async function handleSuccessfulRenewal(
     renewal_attempt_count: 0,
     renewal_claimed_at: null,
   };
+
+  // Phase 10: refresh the fallback snapshot to whatever discount this cycle
+  // actually used (research.md §5) — untouched (no keys added) for a legacy
+  // subscription.
+  if (context.frequency === "custom_interval") {
+    subscriptionUpdate.delivery_interval_id = context.deliveryIntervalId;
+    subscriptionUpdate.delivery_interval_days = context.deliveryIntervalDays;
+    subscriptionUpdate.delivery_interval_last_discount_percent = context.deliveryIntervalDiscountPercent;
+  }
 
   if (context.pendingResolved) {
     subscriptionUpdate.pending_frequency = null;

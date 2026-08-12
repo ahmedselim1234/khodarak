@@ -10,6 +10,8 @@ import { settingsApi } from "./settingsApi";
 import { adminOrdersApi } from "./adminOrdersApi";
 import { adminSubscriptionsApi } from "./adminSubscriptionsApi";
 import { adminCitiesApi } from "./adminCitiesApi";
+import { adminDeliveryIntervalsApi } from "./adminDeliveryIntervalsApi";
+import { deliveryIntervalsApi } from "./deliveryIntervalsApi";
 import { cartReducer } from "@/lib/cart/cartSlice";
 
 export const store = configureStore({
@@ -25,6 +27,8 @@ export const store = configureStore({
     [adminOrdersApi.reducerPath]: adminOrdersApi.reducer,
     [adminSubscriptionsApi.reducerPath]: adminSubscriptionsApi.reducer,
     [adminCitiesApi.reducerPath]: adminCitiesApi.reducer,
+    [adminDeliveryIntervalsApi.reducerPath]: adminDeliveryIntervalsApi.reducer,
+    [deliveryIntervalsApi.reducerPath]: deliveryIntervalsApi.reducer,
     cart: cartReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -39,7 +43,9 @@ export const store = configureStore({
       settingsApi.middleware,
       adminOrdersApi.middleware,
       adminSubscriptionsApi.middleware,
-      adminCitiesApi.middleware
+      adminCitiesApi.middleware,
+      adminDeliveryIntervalsApi.middleware,
+      deliveryIntervalsApi.middleware
     ),
 });
 

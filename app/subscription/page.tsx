@@ -57,7 +57,6 @@ export default async function SubscriptionPage() {
             ) : (
               <SubscriptionWizard
                 products={mappedProducts}
-                frequencies={settings.frequencies}
                 defaultCityId={defaultCityId}
                 firstDeliveryLeadDays={settings.firstDeliveryLeadDays}
                 blackoutWeekdays={settings.blackoutWeekdays}

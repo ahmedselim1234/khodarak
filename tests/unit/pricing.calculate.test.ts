@@ -303,6 +303,58 @@ describe("calculate — rounding modes", () => {
   });
 });
 
+describe("calculate — custom_interval (Phase 10)", () => {
+  it("sources the discount from deliveryInterval instead of settings.frequencies", () => {
+    const result = calculate({
+      items: [{ productId: "p1", price: 40, quantity: 1 }],
+      frequency: "custom_interval",
+      deliveryInterval: { discountPercent: 10, deliveriesPerMonth: 15 },
+      city: cityNoOverride,
+      settings: baseSettings,
+    });
+
+    // frequencyDiscountAmount = 40 * 10% = 4
+    expect(result.frequencyDiscountAmount).toBe(4);
+    expect(result.afterDiscount).toBe(36);
+  });
+
+  it("supports a 0% interval discount as a valid explicit value, not a fallback", () => {
+    const result = calculate({
+      items: [{ productId: "p1", price: 40, quantity: 1 }],
+      frequency: "custom_interval",
+      deliveryInterval: { discountPercent: 0, deliveriesPerMonth: 30 },
+      city: cityNoOverride,
+      settings: baseSettings,
+    });
+
+    expect(result.frequencyDiscountAmount).toBe(0);
+    expect(result.afterDiscount).toBe(40);
+  });
+
+  it("computes estimatedMonthly from deliveryInterval.deliveriesPerMonth for a 90-day interval", () => {
+    const result = calculate({
+      items: [{ productId: "p1", price: 100, quantity: 1 }],
+      frequency: "custom_interval",
+      deliveryInterval: { discountPercent: 5, deliveriesPerMonth: 0.33 },
+      city: cityNoOverride,
+      settings: baseSettings,
+    });
+
+    expect(result.estimatedMonthly).toBeCloseTo(result.totalPerDelivery * 0.33, 5);
+  });
+
+  it("leaves the legacy frequency path completely unaffected by the presence of custom_interval", () => {
+    const legacy = calculate({
+      items: [{ productId: "p1", price: 40, quantity: 1 }],
+      frequency: "weekly",
+      city: cityNoOverride,
+      settings: baseSettings,
+    });
+
+    expect(legacy.frequencyDiscountAmount).toBe(4); // 40 * 10% (weekly's own discount)
+  });
+});
+
 describe("calculate — edge cases", () => {
   it("handles an empty item list without NaN or division-by-zero", () => {
     const result = calculate({

@@ -60,7 +60,11 @@ export async function selfHealOverduePause(subscriptionId: string): Promise<void
 // (research.md §1).
 export async function applyImmediateEdit(params: {
   subscriptionId: string;
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  // Present iff frequency === "custom_interval" (Phase 10, research.md §6).
+  deliveryIntervalId?: string;
+  deliveryIntervalDays?: number;
+  deliveryIntervalDiscountPercent?: number;
   addressId: string;
   items: ItemInput[];
   priceBreakdown: PriceBreakdown;
@@ -68,14 +72,21 @@ export async function applyImmediateEdit(params: {
 }): Promise<void> {
   const supabase = createServiceRoleClient();
 
+  const isInterval = params.frequency === "custom_interval";
+
   await supabase
     .from("subscriptions")
     .update({
       frequency: params.frequency,
+      delivery_interval_id: isInterval ? params.deliveryIntervalId : null,
+      delivery_interval_days: isInterval ? params.deliveryIntervalDays : null,
+      delivery_interval_last_discount_percent: isInterval ? params.deliveryIntervalDiscountPercent : null,
       address_id: params.addressId,
       price_breakdown: params.priceBreakdown,
       next_delivery_date: params.nextDeliveryDate,
       pending_frequency: null,
+      pending_delivery_interval_id: null,
+      pending_delivery_interval_days: null,
       pending_address_id: null,
       pending_price_breakdown: null,
       pending_effective_from: null,
@@ -103,7 +114,10 @@ export async function applyImmediateEdit(params: {
 // change, never a merge (research.md §1).
 export async function savePendingEdit(params: {
   subscriptionId: string;
-  frequency: FrequencyKey;
+  frequency: FrequencyKey | "custom_interval";
+  // Present iff frequency === "custom_interval" (Phase 10, research.md §6).
+  deliveryIntervalId?: string;
+  deliveryIntervalDays?: number;
   addressId: string;
   items: ItemInput[];
   priceBreakdown: PriceBreakdown;
@@ -111,10 +125,14 @@ export async function savePendingEdit(params: {
 }): Promise<void> {
   const supabase = createServiceRoleClient();
 
+  const isInterval = params.frequency === "custom_interval";
+
   await supabase
     .from("subscriptions")
     .update({
       pending_frequency: params.frequency,
+      pending_delivery_interval_id: isInterval ? params.deliveryIntervalId : null,
+      pending_delivery_interval_days: isInterval ? params.deliveryIntervalDays : null,
       pending_address_id: params.addressId,
       pending_price_breakdown: params.priceBreakdown,
       pending_effective_from: params.effectiveFrom,

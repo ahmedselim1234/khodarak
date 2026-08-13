@@ -20,7 +20,7 @@ export default async function SubscriptionPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: products }, { data: settingsRow }, { data: defaultAddress }, { data: firstCity }] =
+  const [{ data: products }, { data: settingsRow }, { data: defaultAddress }, { data: cityRows }] =
     await Promise.all([
       supabase.from("products").select(PRODUCT_SELECT).eq("is_available", true).order("sort_order"),
       supabase.from("settings").select(FULL_SETTINGS_SELECT).eq("id", 1).single(),
@@ -32,12 +32,17 @@ export default async function SubscriptionPage() {
             .eq("is_default", true)
             .maybeSingle()
         : Promise.resolve({ data: null }),
-      supabase.from("cities").select("id").eq("is_active", true).order("name_ar").limit(1).maybeSingle(),
+      // Full list, not just the first row: the checkout step now creates
+      // addresses in place (AddressSelector -> AddressForm), which needs the
+      // city options. Also serves the default-city fallback below, so this
+      // replaces the old .limit(1) query rather than adding to it.
+      supabase.from("cities").select("id, name_ar").eq("is_active", true).order("name_ar"),
     ]);
 
   const mappedProducts = (products ?? []).map((row) => mapProductRow(row));
   const settings = settingsRow ? mapSettingsRow(settingsRow) : null;
-  const defaultCityId = defaultAddress?.city_id ?? firstCity?.id ?? null;
+  const cities = (cityRows ?? []).map((row) => ({ id: row.id, nameAr: row.name_ar }));
+  const defaultCityId = defaultAddress?.city_id ?? cities[0]?.id ?? null;
 
   return (
     <>
@@ -55,6 +60,7 @@ export default async function SubscriptionPage() {
             ) : (
               <SubscriptionWizard
                 products={mappedProducts}
+                cities={cities}
                 defaultCityId={defaultCityId}
                 firstDeliveryLeadDays={settings.firstDeliveryLeadDays}
                 blackoutWeekdays={settings.blackoutWeekdays}

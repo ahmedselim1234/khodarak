@@ -18,7 +18,10 @@ export function AddressForm({
 }: {
   cities: { id: string; nameAr: string }[];
   existingAddress?: Address;
-  onSuccess: () => void;
+  // Receives the saved row so callers that need to act on it (the
+  // subscription wizard selects the address it just created) don't have to
+  // wait for the list refetch and guess which row is new.
+  onSuccess: (address: Address) => void;
   onCancel: () => void;
 }) {
   const [label, setLabel] = useState(existingAddress?.label ?? "");
@@ -49,13 +52,14 @@ export function AddressForm({
     setFieldErrors({});
 
     try {
+      let saved: Address;
       if (existingAddress) {
-        await updateAddress({ id: existingAddress.id, body: result.data }).unwrap();
+        saved = await updateAddress({ id: existingAddress.id, body: result.data }).unwrap();
       } else {
         const cityName = cities.find((city) => city.id === result.data.cityId)?.nameAr;
-        await createAddress({ body: result.data, cityName }).unwrap();
+        saved = await createAddress({ body: result.data, cityName }).unwrap();
       }
-      onSuccess();
+      onSuccess(saved);
     } catch {
       setFormError("تعذر حفظ العنوان — الرجاء المحاولة مرة أخرى.");
     }

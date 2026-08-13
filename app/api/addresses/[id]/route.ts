@@ -69,6 +69,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .single();
 
   if (error || !data) {
+    console.error("[PATCH /api/addresses/:id] update failed", { userId: user.id, addressId: id, error });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 
@@ -115,6 +116,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     .maybeSingle();
 
   if (error) {
+    console.error("[DELETE /api/addresses/:id] delete failed", { userId: user.id, addressId: id, error });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 

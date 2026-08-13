@@ -29,6 +29,7 @@ export async function GET() {
     .order("created_at", { ascending: true });
 
   if (error) {
+    console.error("[GET /api/addresses] query failed", { userId: user.id, error });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !data) {
+    console.error("[POST /api/addresses] insert failed", { userId: user.id, error });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 

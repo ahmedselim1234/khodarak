@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { env } from "@/lib/env";
 import { forgotPasswordSchema } from "@/lib/validation/auth";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
@@ -27,8 +28,12 @@ export function ForgotPasswordForm() {
     setSubmitting(true);
 
     const supabase = createClient();
+    // Pinned to the configured site origin, not window.location.origin: the
+    // emailed link must point at the canonical domain no matter which host the
+    // form was submitted from, and Supabase only honours redirects that are on
+    // its dashboard allow-list anyway.
     await supabase.auth.resetPasswordForEmail(result.data.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/reset-password`,
     });
 
     // FR-006: always show the same confirmation, whether or not the call

@@ -16,6 +16,14 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY is required"),
+  // The canonical public origin. Required with no fallback on purpose: a
+  // silent default would send password-reset emails pointing at the wrong
+  // domain, which looks like a working deploy until someone clicks the link.
+  NEXT_PUBLIC_SITE_URL: z
+    .string()
+    .min(1, "NEXT_PUBLIC_SITE_URL is required")
+    .url("NEXT_PUBLIC_SITE_URL must be a valid URL")
+    .transform((value) => value.replace(/\/+$/, "")),
 });
 
 export function parsePublicEnv(source: Record<string, string | undefined>) {
@@ -23,6 +31,7 @@ export function parsePublicEnv(source: Record<string, string | undefined>) {
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: source.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SITE_URL: source.NEXT_PUBLIC_SITE_URL,
   });
 
   if (!parsed.success) {
@@ -46,4 +55,5 @@ export const env = parsePublicEnv({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
 });

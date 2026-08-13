@@ -13,6 +13,7 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key",
       NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY: "pk_test_placeholder",
+      NEXT_PUBLIC_SITE_URL: "https://placeholder.example.com",
     },
   },
   resolve: {

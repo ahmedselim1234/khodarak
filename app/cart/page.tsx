@@ -9,11 +9,7 @@ export const metadata: Metadata = {
   description: "راجع محتويات صندوقك، عدّل الكميات، ثم أكمل اشتراكك.",
 };
 
-// /cart — the cart's own page, split out of the subscription builder. The
-// builder still owns frequency/date/address; this page owns only "what is in
-// the box", so a visitor can review and edit it without being dropped into a
-// multi-step wizard. Open to guests too — the guest cart lives in
-// localStorage and is merged on sign-in (FR-015).
+
 export default function CartPage() {
   return (
     <>

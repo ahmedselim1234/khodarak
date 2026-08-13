@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { createCatalogClient } from "@/lib/supabase/publicCatalog";
+import { env } from "@/lib/env";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://khodarak.com";
+const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
 export const revalidate = 3600;
 

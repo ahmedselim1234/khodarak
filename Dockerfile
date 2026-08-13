@@ -15,6 +15,7 @@ COPY . .
 ENV NEXT_PUBLIC_SUPABASE_URL="https://placeholder.supabase.co"
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder-anon-key"
 ENV NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY="pk_test_placeholder"
+ENV NEXT_PUBLIC_SITE_URL="https://placeholder.example.com"
 ENV SUPABASE_SERVICE_ROLE_KEY="placeholder-service-role-key"
 ENV MOYASAR_SECRET_KEY="sk_test_placeholder"
 ENV MOYASAR_WEBHOOK_SECRET="placeholder-webhook-secret"

@@ -167,7 +167,14 @@ export function SubscriptionWizard({
       <WizardProgressHeader activeStep={effectiveStep} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
-        <div className="lg:col-span-8 order-2 lg:order-1 flex flex-col gap-stack-lg">
+        {/* Keyed on the step so React remounts this column when the wizard
+            advances, which is what replays the entrance animation. `slide-in-start`
+            resolves through --start-x, so the panel enters from the right in
+            this RTL layout — i.e. the direction you just came from. */}
+        <div
+          key={effectiveStep}
+          className="lg:col-span-8 order-2 lg:order-1 flex animate-slide-in-start flex-col gap-stack-lg"
+        >
           {effectiveStep === "build" ? (
             <>
               <BoxCategoryTabs activeCategory={category} onChange={setCategory} />

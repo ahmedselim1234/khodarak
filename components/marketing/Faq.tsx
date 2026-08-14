@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { Reveal } from "@/components/ui/Reveal";
 
 const faqs = [
   {
@@ -41,28 +42,30 @@ export function Faq() {
   return (
     <section className="border-t border-outline-variant bg-surface-container-low py-stack-2xl">
       <Container>
-        <div className="max-w-xl">
+        <Reveal className="max-w-xl">
           <p className="text-overline uppercase text-primary">الأسئلة الشائعة</p>
           <h2 className="mt-2 text-h1 text-on-background">كل ما تحتاج معرفته</h2>
-        </div>
+        </Reveal>
 
         <div className="mt-stack-xl grid grid-cols-1 gap-stack-sm lg:grid-cols-2">
-          {faqs.map((faq) => (
-            <details
-              key={faq.question}
-              className="group rounded-organic border border-outline-variant bg-surface p-5 open:shadow-sm"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-h3 text-on-surface marker:content-['']">
-                {faq.question}
-                <ChevronDown
-                  className="size-5 shrink-0 text-primary transition-transform duration-fast group-open:rotate-180"
-                  aria-hidden="true"
-                />
-              </summary>
-              <p className="mt-stack-sm text-small leading-relaxed text-on-surface-variant">
-                {faq.answer}
-              </p>
-            </details>
+          {faqs.map((faq, index) => (
+            <Reveal key={faq.question} delay={Math.min(index, 3) * 70}>
+              <details className="group rounded-organic border border-outline-variant bg-surface p-5 transition-[border-color,box-shadow] duration-slow ease-out-expo hover:border-primary-container open:border-primary-container open:shadow-md">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-h3 text-on-surface transition-colors duration-fast marker:content-[''] group-hover:text-primary">
+                  {faq.question}
+                  <ChevronDown
+                    className="size-5 shrink-0 text-primary transition-transform duration-slow ease-out-expo group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                {/* The panel fades in on open. Deliberately opacity-only —
+                    animating height here would make every expand a layout
+                    shift on a page inside the CLS budget. */}
+                <p className="mt-stack-sm animate-fade-in text-small leading-relaxed text-on-surface-variant">
+                  {faq.answer}
+                </p>
+              </details>
+            </Reveal>
           ))}
         </div>
       </Container>

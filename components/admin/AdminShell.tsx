@@ -22,7 +22,11 @@ export function AdminShell({
         <AdminSideNav activePath={activePath} />
         <main className="flex-1 min-w-0">
           <Container>
-            <div className="py-stack-lg">{children}</div>
+            {/* Admin deliberately gets a plain fade and nothing more — no
+                scroll reveals, no stagger, no ambient motion. This is a
+                high-frequency tool; entrance choreography that delights on a
+                landing page becomes friction on the twentieth page load. */}
+            <div className="animate-fade-in py-stack-lg">{children}</div>
           </Container>
         </main>
       </div>

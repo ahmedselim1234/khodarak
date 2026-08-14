@@ -36,10 +36,10 @@ export function AdminSideNav({ activePath }: { activePath: string }) {
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-small transition-colors duration-fast ${
+              className={`flex items-center gap-3 rounded-lg border-s-2 px-3 py-2.5 text-small transition-[background-color,color,border-color] duration-fast ease-out-quart ${
                 active
-                  ? "bg-primary-container font-semibold text-on-primary-container"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  ? "border-primary bg-primary-container font-semibold text-on-primary-container"
+                  : "border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               }`}
             >
               <Icon className="size-[18px] shrink-0" aria-hidden="true" />

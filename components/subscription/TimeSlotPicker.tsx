@@ -19,11 +19,12 @@ export function TimeSlotPicker({
             key={slot.id}
             type="button"
             onClick={() => onChange(slot.id)}
-            className={
+            aria-pressed={value === slot.id}
+            className={`p-4 rounded-2xl border-2 text-right transition-[background-color,border-color,box-shadow,transform] duration-fast ease-out-quart active:scale-[0.98] motion-reduce:active:scale-100 ${
               value === slot.id
-                ? "p-4 rounded-2xl border-2 border-primary bg-primary-fixed-dim/20 text-right"
-                : "p-4 rounded-2xl border-2 border-outline-variant text-right hover:bg-surface-container-low transition-all"
-            }
+                ? "border-primary bg-primary-container shadow-focus"
+                : "border-outline-variant hover:border-primary/40 hover:bg-surface-container-low"
+            }`}
           >
             <p className="font-label-sm text-label-sm">{slot.label}</p>
             <p className="text-[12px] text-on-surface-variant">{slot.window}</p>

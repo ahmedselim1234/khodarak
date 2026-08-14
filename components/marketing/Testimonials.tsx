@@ -1,5 +1,6 @@
 import { Quote } from "lucide-react";
 import { Container } from "@/components/ui/Container";
+import { Reveal } from "@/components/ui/Reveal";
 
 const testimonials = [
   {
@@ -26,19 +27,21 @@ export function Testimonials() {
   return (
     <section className="py-stack-2xl">
       <Container>
-        <div className="max-w-xl">
+        <Reveal className="max-w-xl">
           <p className="text-overline uppercase text-primary">آراء المشتركين</p>
           <h2 className="mt-2 text-h1 text-on-background">ماذا يقول عملاؤنا</h2>
-        </div>
+        </Reveal>
 
         <div className="mt-stack-xl grid grid-cols-1 gap-stack-md md:grid-cols-3">
-          {testimonials.map((item) => (
-            <figure
+          {testimonials.map((item, index) => (
+            <Reveal
+              as="figure"
               key={item.name}
-              className="flex flex-col rounded-organic border border-outline-variant bg-surface p-6"
+              delay={index * 90}
+              className="group flex flex-col rounded-organic border border-outline-variant bg-surface p-6 transition-[transform,box-shadow,border-color] duration-slow ease-out-expo hover:-translate-y-1 hover:border-primary-container hover:shadow-lg"
             >
               <Quote
-                className="size-5 text-primary-fixed-dim"
+                className="size-5 text-primary-fixed-dim transition-colors duration-slow group-hover:text-primary"
                 aria-hidden="true"
               />
               <blockquote className="mt-stack-sm grow text-small leading-relaxed text-on-surface">
@@ -48,7 +51,7 @@ export function Testimonials() {
                 <p className="text-label-sm text-on-surface">{item.name}</p>
                 <p className="text-caption text-on-surface-variant">{item.city}</p>
               </figcaption>
-            </figure>
+            </Reveal>
           ))}
         </div>
       </Container>

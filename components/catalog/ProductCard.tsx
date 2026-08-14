@@ -19,7 +19,9 @@ export function ProductCard({
   priority?: boolean;
 }) {
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-organic bg-surface product-card-shadow">
+    // The lift is a Y-axis translate only — no inline-axis movement, so it
+    // needs no RTL handling. Shadow is handled by `.product-card-shadow`.
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-organic bg-surface product-card-shadow transition-transform duration-slow ease-out-expo hover:-translate-y-1">
       <Link
         href={`/browse/${product.id}`}
         prefetch={false}
@@ -34,7 +36,7 @@ export function ProductCard({
           className="object-cover transition-transform duration-slow ease-out-quart group-hover:scale-105"
         />
         {!product.isAvailable && (
-          <span className="absolute top-3 end-3 rounded-full bg-error px-2.5 py-1 text-caption font-bold text-on-error">
+          <span className="absolute top-3 end-3 animate-fade-in rounded-full bg-error px-2.5 py-1 text-caption font-bold text-on-error shadow-sm">
             غير متوفر
           </span>
         )}

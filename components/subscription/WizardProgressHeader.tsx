@@ -13,24 +13,34 @@ export function WizardProgressHeader({ activeStep }: { activeStep: "build" | "ch
       {STEPS.map((step, index) => (
         <div key={step.id} className="flex items-center gap-2">
           <div
-            className={
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-label-sm transition-[background-color,border-color,color] duration-slow ease-out-expo ${
               index <= activeIndex
-                ? "w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-label-sm"
-                : "w-8 h-8 rounded-full border-2 border-outline-variant text-outline flex items-center justify-center font-bold text-label-sm"
-            }
+                ? "bg-primary text-on-primary"
+                : "border-2 border-outline-variant text-outline"
+            } ${
+              // Only the step you are ON pulses. A completed step that kept
+              // throbbing would compete with the one asking for attention.
+              index === activeIndex ? "animate-pulse-ring" : ""
+            }`}
           >
             {index + 1}
           </div>
           <span
-            className={
+            className={`font-label-sm text-label-sm transition-colors duration-slow ${
               index <= activeIndex
-                ? "font-label-sm text-label-sm text-primary font-bold"
-                : "font-label-sm text-label-sm text-on-surface-variant"
-            }
+                ? "text-primary font-bold"
+                : "text-on-surface-variant"
+            }`}
           >
             {step.label}
           </span>
-          {index < STEPS.length - 1 && <div className="w-8 h-0.5 bg-outline-variant mx-2" />}
+          {index < STEPS.length - 1 && (
+            <div
+              className={`w-8 h-0.5 mx-2 transition-colors duration-slow ease-out-expo ${
+                index < activeIndex ? "bg-primary" : "bg-outline-variant"
+              }`}
+            />
+          )}
         </div>
       ))}
     </div>

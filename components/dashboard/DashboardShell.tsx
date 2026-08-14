@@ -23,7 +23,7 @@ export function DashboardShell({
         <SideNav activePath={activePath} />
         <main className="flex-1 min-w-0">
           <Container>
-            <div className="py-stack-lg">{children}</div>
+            <div className="animate-fade-up py-stack-lg">{children}</div>
           </Container>
         </main>
       </div>

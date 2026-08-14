@@ -23,7 +23,9 @@ export function Alert({
   return (
     <div
       role="status"
-      className={`flex items-start gap-3 rounded-lg p-3.5 ${cls} ${className}`}
+      // `border-s-4 border-current` gives the alert a tone-colored spine on the
+      // inline-start edge — logical, so it lands on the right in RTL.
+      className={`flex animate-fade-in items-start gap-3 rounded-lg border-s-4 border-current p-3.5 ${cls} ${className}`}
     >
       <Icon className="size-5 shrink-0 mt-0.5" aria-hidden="true" />
       <div className="min-w-0 text-small">
@@ -36,10 +38,10 @@ export function Alert({
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`animate-pulse rounded-md bg-surface-container-high ${className}`}
-      aria-hidden="true"
-    />
+    // `.skeleton` (globals.css) sweeps a highlight along the inline axis instead
+    // of pulsing the whole block. A directional sweep reads as loading; a fade
+    // in and out reads as something broken.
+    <div className={`skeleton rounded-md ${className}`} aria-hidden="true" />
   );
 }
 
@@ -58,10 +60,10 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center py-stack-xl px-margin-mobile ${className}`}
+      className={`flex animate-fade-up flex-col items-center justify-center text-center py-stack-xl px-margin-mobile ${className}`}
     >
       {icon && (
-        <div className="mb-stack-md flex size-14 items-center justify-center rounded-full bg-primary-container text-on-primary-container">
+        <div className="mb-stack-md flex size-14 animate-scale-in items-center justify-center rounded-full bg-primary-container text-on-primary-container [animation-delay:120ms]">
           {icon}
         </div>
       )}

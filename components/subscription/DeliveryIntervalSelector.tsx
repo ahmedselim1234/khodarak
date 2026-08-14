@@ -39,11 +39,12 @@ export function DeliveryIntervalSelector({
             key={interval.id}
             type="button"
             onClick={() => onChange(interval.id)}
-            className={
+            aria-pressed={value === interval.id}
+            className={`p-3 rounded-2xl border-2 text-center transition-[background-color,color,border-color,box-shadow,transform] duration-fast ease-out-quart active:scale-[0.98] motion-reduce:active:scale-100 ${
               value === interval.id
-                ? "p-3 rounded-2xl border-2 border-primary bg-primary-fixed-dim/20 text-primary font-bold text-center"
-                : "p-3 rounded-2xl border-2 border-outline-variant text-on-surface-variant text-center hover:bg-surface-container-low transition-all"
-            }
+                ? "border-primary bg-primary-container font-bold text-on-primary-container shadow-focus"
+                : "border-outline-variant text-on-surface-variant hover:border-primary/40 hover:bg-surface-container-low"
+            }`}
           >
             كل {interval.days} يوم
             <span className="block font-label-sm text-label-sm">

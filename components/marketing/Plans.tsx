@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Badge } from "@/components/ui/Badge";
+import { Reveal } from "@/components/ui/Reveal";
 
 // Marketing copy only — the real frequency options and prices come from the
 // `settings` row and are shown in the builder at /subscription.
@@ -36,22 +37,23 @@ export function Plans() {
   return (
     <section className="border-y border-outline-variant bg-surface-container-low py-stack-2xl">
       <Container>
-        <div className="max-w-xl">
+        <Reveal className="max-w-xl">
           <p className="text-overline uppercase text-primary">الخطط</p>
           <h2 className="mt-2 text-h1 text-on-background">اختر ما يناسب مطبخك</h2>
           <p className="mt-stack-sm text-body-md text-on-surface-variant">
             كل الخطط قابلة للتعديل أو الإيقاف في أي وقت، بدون رسوم إلغاء.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-stack-xl grid grid-cols-1 gap-stack-md md:grid-cols-3">
-          {plans.map((plan) => (
-            <div
+          {plans.map((plan, index) => (
+            <Reveal
               key={plan.name}
-              className={`flex flex-col rounded-organic border bg-surface p-6 ${
+              delay={index * 90}
+              className={`flex flex-col rounded-organic border bg-surface p-6 transition-[transform,box-shadow] duration-slow ease-out-expo hover:-translate-y-1 ${
                 plan.featured
-                  ? "border-primary shadow-lg"
-                  : "border-outline-variant"
+                  ? "border-primary shadow-lg hover:shadow-glow-primary"
+                  : "border-outline-variant hover:shadow-lg"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -80,15 +82,15 @@ export function Plans() {
 
               <Link
                 href="/subscription"
-                className={`mt-stack-lg inline-flex h-11 items-center justify-center rounded-lg px-5 text-label-sm font-semibold transition-colors duration-fast ${
+                className={`mt-stack-lg inline-flex h-11 items-center justify-center rounded-lg px-5 text-label-sm font-semibold transition-[background-color,color,border-color,box-shadow,filter,transform] duration-fast ease-out-quart active:scale-[0.98] motion-reduce:active:scale-100 ${
                   plan.featured
-                    ? "bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container"
+                    ? "bg-primary text-on-primary hover:brightness-110 hover:shadow-glow-primary"
                     : "border border-outline-variant text-on-surface hover:border-primary hover:text-primary"
                 }`}
               >
                 ابدأ بهذه الخطة
               </Link>
-            </div>
+            </Reveal>
           ))}
         </div>
       </Container>

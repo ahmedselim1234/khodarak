@@ -45,7 +45,7 @@ export function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/45 p-stack-md backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex animate-overlay-in items-center justify-center bg-inverse-surface/55 p-stack-md backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -55,7 +55,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
-        className={`w-full max-w-md rounded-organic bg-surface p-6 shadow-xl outline-none ${className}`}
+        className={`w-full max-w-md animate-scale-in rounded-organic bg-surface p-6 shadow-xl outline-none ${className}`}
       >
         <div className="mb-stack-md flex items-start justify-between gap-stack-md">
           <div className="min-w-0">

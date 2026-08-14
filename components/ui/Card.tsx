@@ -13,9 +13,13 @@ const variantClasses = {
   // Default: sits on the cream `background`, so plain white plus a hairline
   // is enough separation — no shadow needed.
   flat: "bg-surface border border-outline-variant",
-  raised: "bg-surface border border-outline-variant/70 shadow-md",
+  raised:
+    "bg-surface border border-outline-variant/70 shadow-md transition-shadow duration-slow ease-out-expo hover:shadow-lg",
   outlined: "bg-transparent border border-outline-variant",
   filled: "bg-surface-container border border-transparent",
+  // Brand-tinted panel, for the one card per view that should carry weight
+  // (featured plan, upgrade prompt). Container tier, so text stays dark.
+  brand: "bg-primary-container border border-transparent text-on-primary-container",
 } as const;
 
 export function Card({

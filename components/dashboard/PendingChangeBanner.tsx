@@ -6,8 +6,13 @@ import { formatDeliveryCadenceLabel } from "@/lib/pricing/deliveryInterval";
 // touching the already-locked next delivery shown above it.
 export function PendingChangeBanner({ pendingChange }: { pendingChange: SubscriptionPendingChange }) {
   return (
-    <div className="bg-tertiary/10 border border-tertiary/30 rounded-2xl p-stack-md flex flex-col gap-1">
-      <p className="font-bold text-tertiary">لديك تغيير قيد الانتظار</p>
+    // Amber container rather than the old washed-out tertiary tint — a pending
+    // change is a "needs your attention" state and should read as one. The
+    // border-s spine matches the Alert primitive.
+    // The spine is `warning` (#9A6300), not `accent`: accent is a fill-only
+    // token and would be near-invisible against its own container tint.
+    <div className="animate-slide-in-start rounded-2xl border border-warning/30 border-s-4 border-s-warning bg-accent-container p-stack-md flex flex-col gap-1">
+      <p className="font-bold text-on-accent-container">لديك تغيير قيد الانتظار</p>
       <p className="font-label-sm text-label-sm text-on-surface-variant">
         سيتم تطبيق التردد{" "}
         {formatDeliveryCadenceLabel(pendingChange.frequency, pendingChange.deliveryInterval)}{" "}

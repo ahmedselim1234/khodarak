@@ -85,7 +85,9 @@ export function CartView() {
             {sortedItems.map((item) => (
               <article
                 key={item.productId}
-                className="flex items-center gap-stack-md rounded-organic border border-outline-variant bg-surface p-4"
+                // Keyed on productId already, so a newly added line mounts
+                // fresh and fades in rather than appearing instantly.
+                className="flex animate-fade-in items-center gap-stack-md rounded-organic border border-outline-variant bg-surface p-4 transition-[border-color,box-shadow] duration-slow ease-out-expo hover:border-primary-container hover:shadow-md"
               >
                 <Link
                   href={`/browse/${item.productId}`}

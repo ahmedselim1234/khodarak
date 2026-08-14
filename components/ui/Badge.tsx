@@ -8,6 +8,7 @@ const toneClasses = {
   warning: "bg-warning-container text-on-warning-container",
   danger: "bg-error-container text-on-error-container",
   info: "bg-info-container text-on-info-container",
+  amber: "bg-accent-container text-on-accent-container",
 } as const;
 
 export type BadgeTone = keyof typeof toneClasses;
@@ -49,6 +50,11 @@ const statusTones: Record<string, BadgeTone> = {
   refunded: "neutral",
 };
 
+// Statuses that mean "something is happening right now". Only these get a
+// pulsing dot — a settled status like `delivered` or `cancelled` that throbbed
+// forever would be pure noise, and on a list view it would be dozens of them.
+const inFlightStatuses = new Set(["processing", "out_for_delivery", "pending_payment"]);
+
 export function StatusPill({
   status,
   label,
@@ -61,7 +67,9 @@ export function StatusPill({
   return (
     <Badge tone={statusTones[status] ?? "neutral"} className={className}>
       <span
-        className="size-1.5 rounded-full bg-current opacity-70"
+        className={`size-1.5 rounded-full bg-current opacity-70 ${
+          inFlightStatuses.has(status) ? "animate-pulse-ring" : ""
+        }`}
         aria-hidden="true"
       />
       {label}

@@ -1,19 +1,30 @@
 import type { Config } from "tailwindcss";
 
 /*
- * Design system — "Fresh & Organic".
+ * Design system — "Fresh & Organic", vibrant tuning.
  *
- * Warm cream ground, deep leaf-green primary, ripe-tomato accent. Replaces the
- * palette originally ported from design/home.html, which paired a forest green
- * with a cool blue surface (#f4faff) and set `surface` equal to `background`,
- * so nothing on the page ever had depth.
+ * Warm cream ground, bright leaf-green primary, hot-tomato secondary, mango
+ * accent. The identity is unchanged from the original palette; the values are
+ * simply pushed for saturation and brightness.
  *
- * Token NAMES are unchanged from the Material-3 set the ~73 component files
+ * Token NAMES are unchanged from the Material-3 set the ~130 component files
  * already reference — only their values move. That is what lets every page
- * repaint from this one file. New tokens (shadow scale, extra type tiers,
- * semantic status colors) are additive.
+ * repaint from this one file. New tokens (accent ramp, `*-bright` decoratives,
+ * glow shadows, keyframes) are additive.
  *
  * Light palette only, by decision — there are no `dark:` variants in the repo.
+ *
+ * ── FILL-ONLY TOKENS ────────────────────────────────────────────────────────
+ * `accent`, `accent-bright`, `primary-bright` and `secondary-bright` exist for
+ * gradient stops, glow shadows and blurred decorative blobs. They are NOT
+ * text-contrast safe on light surfaces (`accent` #FFB020 vs white is 1.83 —
+ * below even the 3:1 non-text threshold), so `text-accent`, `border-accent`,
+ * `text-*-bright` and putting text on a `bg-*-bright` are all banned. Use
+ * `on-accent-container` #6B3F00 when you need a text-safe amber (8.99 on white).
+ *
+ * Every foreground/background pair below was checked against WCAG AA (4.5:1
+ * text, 3:1 UI). Two pre-existing failures were fixed in the process: `warning`
+ * with white text was 3.64, and `outline` was 3.16 against the cream page.
  */
 const config: Config = {
   content: [
@@ -23,84 +34,104 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // — Primary: deep leaf green ————————————————————————
-        primary: "#1F5D3A",
+        // — Primary: bright leaf green ——————————————————————
+        // #11803D rather than a punchier #12833F: the latter is only 4.40
+        // against `surface-container`, and `text-primary` sits on container
+        // fills in Plans, HowItWorks and filled Cards. This clears 5.03 on
+        // white, 4.86 on `background`, 4.57 on `surface-container`.
+        primary: "#11803D",
         "on-primary": "#FFFFFF",
-        // NOTE: `primary-container` used to be #1b5e20 — a *dark* green, which
-        // inverts the Material-3 contract (containers are the light tier in a
-        // light theme). Callers like `bg-primary-container/10` assumed light.
-        "primary-container": "#D6E8DD",
-        "on-primary-container": "#0F3D25",
-        "primary-fixed": "#D6E8DD",
-        "primary-fixed-dim": "#7FB894",
-        "on-primary-fixed": "#0F3D25",
-        "on-primary-fixed-variant": "#1F5D3A",
-        "inverse-primary": "#7FB894",
-        "surface-tint": "#2A7248",
+        // Containers are the LIGHT tier in a light theme — callers like
+        // `bg-primary-container/10` depend on that.
+        "primary-container": "#CDF2DB",
+        "on-primary-container": "#0A421F",
+        "primary-fixed": "#CDF2DB",
+        "primary-fixed-dim": "#6FD79A",
+        "on-primary-fixed": "#06301A",
+        "on-primary-fixed-variant": "#0E6B34",
+        "inverse-primary": "#6FE0A0",
+        "surface-tint": "#11803D",
+        "primary-bright": "#19A652", // fill only
 
-        // — Secondary: ripe tomato ——————————————————————————
-        // Darkened from the swatch #E8623A to clear 4.5:1 on white.
-        secondary: "#C24E27",
+        // — Secondary: hot tomato ———————————————————————————
+        // The vivid #F5602F the direction calls for gives only 3.46 with white
+        // text, so the *text-bearing* token is the deeper #C93C10 (5.08 both
+        // ways) and the vivid tone lives on as `secondary-bright`, which never
+        // carries text.
+        secondary: "#C93C10",
         "on-secondary": "#FFFFFF",
-        "secondary-container": "#FBE2D8",
-        "on-secondary-container": "#8A3316",
-        "secondary-fixed": "#FBE2D8",
-        "secondary-fixed-dim": "#F2A183",
-        "on-secondary-fixed": "#4A1A0A",
-        "on-secondary-fixed-variant": "#8A3316",
+        "secondary-container": "#FFE0D2",
+        "on-secondary-container": "#7E2A0A",
+        "secondary-fixed": "#FFE0D2",
+        "secondary-fixed-dim": "#FF9E78",
+        "on-secondary-fixed": "#4A1405",
+        "on-secondary-fixed-variant": "#A32F09",
+        "secondary-bright": "#F5602F", // fill only
+
+        // — Accent: mango ———————————————————————————————————
+        // New ramp. See the FILL-ONLY note at the top of this file: `accent`
+        // itself is 1.83 on white and must never be a foreground.
+        accent: "#FFB020",
+        "on-accent": "#3D2600",
+        "accent-container": "#FFF4D6",
+        "on-accent-container": "#6B3F00",
+        "accent-bright": "#FFC94D", // fill only
 
         // — Tertiary: warm grey-green ———————————————————————
         tertiary: "#5A6157",
         "on-tertiary": "#FFFFFF",
-        "tertiary-container": "#EDEAE0",
+        "tertiary-container": "#EFEBDE",
         "on-tertiary-container": "#3A3F37",
-        "tertiary-fixed": "#EDEAE0",
+        "tertiary-fixed": "#EFEBDE",
         "tertiary-fixed-dim": "#C8C6BC",
         "on-tertiary-fixed": "#23261F",
         "on-tertiary-fixed-variant": "#474C43",
 
         // — Surfaces: warm cream ramp ———————————————————————
-        // `background` (cream) and `surface` (white) are deliberately different
-        // now; when they were both #f4faff, cards were invisible against the page.
-        background: "#FBF9F4",
+        // `background` (cream) and `surface` (white) are deliberately different;
+        // when they were the same value, cards were invisible against the page.
+        background: "#FDFBF5",
         "on-background": "#1A1D1A",
         surface: "#FFFFFF",
         "on-surface": "#1A1D1A",
         "surface-bright": "#FFFFFF",
-        "surface-dim": "#F0EBDF",
-        "surface-variant": "#F5F1E8",
+        "surface-dim": "#F2ECDD",
+        "surface-variant": "#F7F4EC",
         "on-surface-variant": "#5A6157",
         "surface-container-lowest": "#FFFFFF",
-        "surface-container-low": "#FBF9F4",
-        "surface-container": "#F5F1E8",
-        "surface-container-high": "#F0EBDF",
-        "surface-container-highest": "#E9E3D5",
-        "inverse-surface": "#23261F",
-        "inverse-on-surface": "#F5F1E8",
+        "surface-container-low": "#FDFBF5",
+        "surface-container": "#F7F4EC",
+        "surface-container-high": "#F2ECDD",
+        "surface-container-highest": "#EAE2CE",
+        // Deep green rather than neutral charcoal — the footer and admin rail
+        // now read as part of the brand instead of a generic dark band.
+        "inverse-surface": "#14301F",
+        "inverse-on-surface": "#EAF5EE",
 
         // — Lines ——————————————————————————————————————————
-        outline: "#858C81",
-        "outline-variant": "#E4E1D8",
+        // `outline` is a real UI border (Input, Field), so it must clear 3:1 on
+        // every ground. The old #858C81 was 3.16 against the cream page.
+        outline: "#767D72",
+        "outline-variant": "#E6E1D2", // decorative hairline only
 
         // — Status ——————————————————————————————————————————
-        // Only `error` existed before, so status pills and the health badge
-        // each invented their own colors inline.
-        error: "#C0392B",
+        error: "#CC2E1E",
         "on-error": "#FFFFFF",
-        "error-container": "#FBE4E1",
+        "error-container": "#FFE1DC",
         "on-error-container": "#8C231A",
-        success: "#2A7248",
+        success: "#0E7A3B",
         "on-success": "#FFFFFF",
-        "success-container": "#D6E8DD",
-        "on-success-container": "#0F3D25",
-        warning: "#B7791F",
+        "success-container": "#CDF2DB",
+        "on-success-container": "#0A421F",
+        // #B7791F carried white text at 3.64 — an AA failure. #9A6300 is 5.05.
+        warning: "#9A6300",
         "on-warning": "#FFFFFF",
-        "warning-container": "#FDF3DC",
-        "on-warning-container": "#7A4E10",
-        info: "#2C5F8A",
+        "warning-container": "#FFF4D6",
+        "on-warning-container": "#6B3F00",
+        info: "#1F6FB2",
         "on-info": "#FFFFFF",
-        "info-container": "#DDEAF4",
-        "on-info-container": "#1B3D59",
+        "info-container": "#DCEBF7",
+        "on-info-container": "#173F63",
       },
 
       fontFamily: {
@@ -191,12 +222,20 @@ const config: Config = {
       boxShadow: {
         // Green-tinted rather than neutral grey, so shadows read as warm
         // ambient light against the cream ground instead of dirty haze.
-        xs: "0 1px 2px rgba(26,29,26,0.04)",
-        sm: "0 1px 3px rgba(26,29,26,0.06), 0 1px 2px rgba(26,29,26,0.04)",
-        md: "0 4px 12px rgba(31,93,58,0.07), 0 1px 3px rgba(26,29,26,0.05)",
-        lg: "0 12px 28px rgba(31,93,58,0.09), 0 4px 8px rgba(26,29,26,0.04)",
-        xl: "0 24px 48px rgba(31,93,58,0.11), 0 8px 16px rgba(26,29,26,0.04)",
-        focus: "0 0 0 3px rgba(31,93,58,0.18)",
+        // Retuned to the brighter primary (17,128,61) and deepened slightly.
+        xs: "0 1px 2px rgba(20,48,31,0.05)",
+        sm: "0 1px 3px rgba(20,48,31,0.07), 0 1px 2px rgba(20,48,31,0.05)",
+        md: "0 4px 14px rgba(17,128,61,0.10), 0 1px 3px rgba(20,48,31,0.06)",
+        lg: "0 14px 32px rgba(17,128,61,0.13), 0 4px 10px rgba(20,48,31,0.05)",
+        xl: "0 28px 56px rgba(17,128,61,0.16), 0 10px 20px rgba(20,48,31,0.05)",
+        focus: "0 0 0 3px rgba(17,128,61,0.22)",
+
+        // Saturated hover glows. Reserved for brand-colored surfaces and the
+        // primary call to action — a glow under a plain white card just looks
+        // like a colour cast.
+        "glow-primary": "0 8px 28px -6px rgba(17,128,61,0.45)",
+        "glow-secondary": "0 8px 28px -6px rgba(245,96,47,0.45)",
+        "glow-accent": "0 8px 28px -6px rgba(255,176,32,0.50)",
         none: "none",
       },
 
@@ -209,6 +248,102 @@ const config: Config = {
         fast: "150ms",
         DEFAULT: "200ms",
         slow: "300ms",
+      },
+
+      /*
+       * Motion vocabulary.
+       *
+       * Two rules hold across every entry below:
+       *
+       * 1. Only `opacity` and `transform` are animated (plus `background-position`
+       *    and `box-shadow` on the ambient loops). Nothing touches height, margin
+       *    or layout, so none of this can contribute to CLS.
+       *
+       * 2. Inline-axis motion goes through `--start-x` / `--end-x`, defined in
+       *    app/globals.css. CSS transforms have no logical axis, so a raw
+       *    `translateX(20px)` would slide the wrong way under `dir="rtl"` — which
+       *    is every page in this app. Never write a physical translate-x in a
+       *    keyframe.
+       */
+      keyframes: {
+        "fade-up": {
+          from: { opacity: "0", transform: "translate3d(0, 16px, 0)" },
+          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.96) translate3d(0, 8px, 0)" },
+          to: { opacity: "1", transform: "scale(1) translate3d(0, 0, 0)" },
+        },
+        "overlay-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        // Enters from the inline-start edge — the right-hand side in RTL.
+        "slide-in-start": {
+          from: {
+            opacity: "0",
+            transform: "translate3d(calc(var(--start-x) * 20px), 0, 0)",
+          },
+          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+        "slide-in-end": {
+          from: {
+            opacity: "0",
+            transform: "translate3d(calc(var(--end-x) * 20px), 0, 0)",
+          },
+          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+        pop: {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.35)" },
+          "70%": { transform: "scale(0.92)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "gradient-pan": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        float: {
+          "0%, 100%": { transform: "translate3d(0, 0, 0)" },
+          "50%": { transform: "translate3d(0, -14px, 0)" },
+        },
+        // The track is rendered twice, so a 50% shift loops seamlessly.
+        marquee: {
+          from: { transform: "translate3d(0, 0, 0)" },
+          to: { transform: "translate3d(calc(var(--end-x) * -50%), 0, 0)" },
+        },
+        "pulse-ring": {
+          "0%": { boxShadow: "0 0 0 0 rgba(17,128,61,0.45)" },
+          "70%": { boxShadow: "0 0 0 10px rgba(17,128,61,0)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(17,128,61,0)" },
+        },
+      },
+
+      animation: {
+        // `both` fill-mode on every entry animation is load-bearing, not
+        // cosmetic. The prefers-reduced-motion block in globals.css forces
+        // `animation-duration: 0.01ms`; `both` is what makes the element settle
+        // on its FINAL keyframe. Without it, a revealed element would snap back
+        // to the `opacity: 0` base state and disappear permanently.
+        "fade-up": "fade-up 520ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in": "fade-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        "scale-in": "scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "overlay-in": "overlay-in 180ms linear both",
+        "slide-in-start": "slide-in-start 420ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "slide-in-end": "slide-in-end 420ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        pop: "pop 320ms cubic-bezier(0.22, 1, 0.36, 1)",
+
+        // Ambient loops. These have no meaningful end state, so the
+        // reduced-motion block switches them off outright rather than
+        // fast-forwarding them.
+        "gradient-pan": "gradient-pan 14s ease-in-out infinite",
+        float: "float 7s ease-in-out infinite",
+        marquee: "marquee 28s linear infinite",
+        "pulse-ring": "pulse-ring 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite",
       },
 
       maxWidth: {

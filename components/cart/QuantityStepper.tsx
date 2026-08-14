@@ -58,7 +58,10 @@ export function QuantityStepper({
         type="button"
         onClick={() => setQuantity(line, product.minQty)}
         aria-label="أضف للصندوق"
-        className={`flex ${cls.add} items-center justify-center rounded-full bg-primary text-on-primary shadow-sm transition-[background-color,box-shadow] duration-fast hover:bg-primary-container hover:text-on-primary-container hover:shadow-md`}
+        // Brightening rather than swapping to the container tier, matching the
+        // Button primary variant: the old swap inverted light-on-dark to
+        // dark-on-light mid-hover and read as the control going disabled.
+        className={`flex ${cls.add} items-center justify-center rounded-full bg-primary text-on-primary shadow-sm transition-[background-color,box-shadow,filter,transform] duration-fast ease-out-quart hover:brightness-110 hover:shadow-glow-primary active:scale-90 motion-reduce:active:scale-100`}
       >
         <Plus className={cls.icon} aria-hidden="true" />
       </button>
@@ -71,12 +74,22 @@ export function QuantityStepper({
         type="button"
         onClick={() => setQuantity(line, quantity - 1)}
         aria-label="إنقاص الكمية"
-        className={`flex ${cls.step} items-center justify-center rounded-full text-primary transition-colors duration-fast hover:bg-surface-container-high`}
+        className={`flex ${cls.step} items-center justify-center rounded-full text-primary transition-[background-color,transform] duration-fast ease-out-quart hover:bg-surface-container-high active:scale-90 motion-reduce:active:scale-100`}
       >
         <Minus className={cls.icon} aria-hidden="true" />
       </button>
-      <span className={`${cls.count} text-center font-bold tabular`} aria-live="polite">
-        {quantity}
+      {/* The live region must NOT be the keyed node: remounting an aria-live
+          element replaces the region itself, and screen readers announce
+          changes *within* a stable region. So the outer span persists and only
+          the inner one is keyed, which is what replays `animate-pop` (a CSS
+          animation does not restart on re-render alone). */}
+      <span
+        className={`${cls.count} text-center font-bold tabular`}
+        aria-live="polite"
+      >
+        <span key={quantity} className="inline-block animate-pop">
+          {quantity}
+        </span>
       </span>
       <button
         type="button"

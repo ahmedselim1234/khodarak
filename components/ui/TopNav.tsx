@@ -53,7 +53,11 @@ export async function TopNav() {
                 key={link.href}
                 href={link.href}
                 prefetch
-                className="font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary"
+                // The underline grows from `origin-center` on purpose:
+                // Tailwind's `origin-left` / `origin-right` are physical, so a
+                // start-anchored underline would grow the wrong way in RTL.
+                // Centre-out sidesteps the direction question entirely.
+                className="relative font-medium text-on-surface-variant transition-colors duration-fast hover:text-primary after:absolute after:-bottom-1 after:inset-x-0 after:h-0.5 after:origin-center after:scale-x-0 after:rounded-full after:bg-primary after:transition-transform after:duration-fast after:ease-out-quart hover:after:scale-x-100"
               >
                 {link.label}
               </Link>
@@ -68,7 +72,7 @@ export async function TopNav() {
                 <Link
                   href={isAdmin ? "/admin" : "/dashboard"}
                   prefetch
-                  className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
+                  className="rounded-full p-2 text-primary transition-[background-color,transform] duration-fast ease-out-quart hover:bg-primary-container active:scale-90 motion-reduce:active:scale-100"
                   aria-label={isAdmin ? "لوحة الإدارة" : "لوحة التحكم"}
                 >
                   {isAdmin ? (
@@ -83,7 +87,7 @@ export async function TopNav() {
               <Link
                 href="/login"
                 prefetch
-                className="rounded-full p-2 text-primary transition-colors duration-fast hover:bg-primary-container"
+                className="rounded-full p-2 text-primary transition-[background-color,transform] duration-fast ease-out-quart hover:bg-primary-container active:scale-90 motion-reduce:active:scale-100"
                 aria-label="تسجيل الدخول"
               >
                 <UserCircle2 className="size-5" aria-hidden="true" />

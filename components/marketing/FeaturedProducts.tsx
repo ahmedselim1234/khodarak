@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { Reveal } from "@/components/ui/Reveal";
 import type { MappedProduct } from "@/lib/products/mapProductRow";
 
 // The home page's answer to "what am I actually buying?" — real rows from the
@@ -13,7 +14,7 @@ export function FeaturedProducts({ products }: { products: MappedProduct[] }) {
   return (
     <section className="border-y border-outline-variant bg-surface-container-low py-stack-2xl">
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-stack-md">
+        <Reveal className="flex flex-wrap items-end justify-between gap-stack-md">
           <div className="max-w-xl">
             <p className="text-overline uppercase text-primary">طازج اليوم</p>
             <h2 className="mt-2 text-h1 text-on-background">اختر من محصول هذا الأسبوع</h2>
@@ -24,16 +25,22 @@ export function FeaturedProducts({ products }: { products: MappedProduct[] }) {
           <Link
             href="/browse"
             prefetch
-            className="inline-flex items-center gap-2 text-label-sm font-semibold text-primary transition-opacity duration-fast hover:opacity-80"
+            className="group inline-flex items-center gap-2 text-label-sm font-semibold text-primary transition-opacity duration-fast hover:opacity-80"
           >
             عرض كل المنتجات
-            <ArrowLeft className="size-4" aria-hidden="true" />
+            {/* -translate-x-1 is leftward, which is forward in RTL. */}
+            <ArrowLeft
+              className="size-4 transition-transform duration-fast ease-out-quart group-hover:-translate-x-1"
+              aria-hidden="true"
+            />
           </Link>
-        </div>
+        </Reveal>
 
         <div className="mt-stack-xl grid grid-cols-2 gap-gutter lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product, index) => (
+            <Reveal key={product.id} delay={index * 70}>
+              <ProductCard product={product} />
+            </Reveal>
           ))}
         </div>
       </Container>
